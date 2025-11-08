@@ -35,7 +35,7 @@ set(CMAKE_ANDROID_API 34)													# Android API version
 set(CMAKE_SYSTEM_VERSION ${CMAKE_ANDROID_API})											# This tells cmake the Android API we are targeting for
 set(CMAKE_ANDROID_PLATFORM android-26)												# Min Android API
 set(ANDROID_STL "c++_shared")													# CXX STL mode for lib
-set(CMAKE_CXX_STANDARD 20)													# CXX Standard
+set(CMAKE_CXX_STANDARD 26)													# CXX Standard
 
 cmake_path(SET ANDROID_SDK_PATH "$ENV{ANDROID_HOME}") # to escape backslashes on Windows
 cmake_path(SET ANDROID_NDK_PATH "$ENV{ANDROID_NDK_HOME}")
@@ -86,13 +86,8 @@ add_compile_definitions(__LIB_VERSION__="${LIB_VERSION}") # You can use lib_vers
 include_directories(${CMAKE_SOURCE_DIR}/include)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
-add_library(${CUR_NAME} SHARED
-	main.cpp
-    src/model/model.cpp
-    src/view/view.cpp
-    src/controller/controller.cpp
-    src/utils/pattern_scanner/pattern_scanner.cpp
-)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+add_library(${CUR_NAME} SHARED main.cpp ${SOURCES})
 
 target_include_directories(${CUR_NAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/include
@@ -103,6 +98,7 @@ target_link_libraries(
 	${CUR_NAME}
 	ciphered
 	log
+	dobby
 )
 
 add_custom_command(

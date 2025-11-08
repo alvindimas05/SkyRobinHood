@@ -1,14 +1,14 @@
 #include "view.hpp"
 
-const char *RHView::getStatusIcon(CollectionStatus status)
+const char *RHView::GetStatusIcon(MapCollectionStatus status)
 {
     switch (status)
     {
-    case CollectionStatus::NOT_COLLECTED:
+    case MapCollectionStatus::NOT_COLLECTED:
         return "[x]";
-    case CollectionStatus::PROCESSING:
+    case MapCollectionStatus::PROCESSING:
         return "[~]";
-    case CollectionStatus::COMPLETED:
+    case MapCollectionStatus::COMPLETED:
         return "[✔]";
     default:
         return "[x]";
@@ -91,41 +91,6 @@ void RHView::_Draw()
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.07f, 0.15f, 0.10f, 1.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8.0f);
     ImGui::BeginChild("RealmList", ImVec2(0, 0), true);
-
-    for (size_t i = 0; i < model.realms.size(); i++)
-    {
-        Realm &realm = model.realms[i];
-        CollectionStatus realmStatus = realm.getStatus();
-        std::string header = std::string(getStatusIcon(realmStatus)) + " " + realm.name;
-
-        ImGui::PushID(static_cast<int>(i));
-        if (ImGui::CollapsingHeader(header.c_str()))
-        {
-            realm.expanded = true;
-            ImGui::Indent(20.0f);
-
-            for (size_t j = 0; j < realm.maps.size(); j++)
-            {
-                Map &map = realm.maps[j];
-                std::string mapLabel = std::string(getStatusIcon(map.status)) + " " + map.name;
-
-                ImGui::PushID(static_cast<int>(j));
-                if (ImGui::Selectable(mapLabel.c_str()))
-                {
-                }
-                ImGui::PopID();
-            }
-
-            ImGui::Unindent(20.0f);
-        }
-        else
-        {
-            realm.expanded = false;
-        }
-        ImGui::PopID();
-
-        ImGui::Spacing();
-    }
 
     ImGui::EndChild();
     ImGui::PopStyleVar();

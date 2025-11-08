@@ -1,29 +1,18 @@
 #include "model.hpp"
 
-const uint8_t Game::updateBytes[32] = {
-    0x55, 0x41, 0x57, 0x41, 0x56, 0x56, 0x57, 0x53,
-    0x48, 0x81, 0xEC, 0x28, 0x01, 0x00, 0x00, 0x48,
-    0x8D, 0xAC, 0x24, 0x80, 0x00, 0x00, 0x00, 0x48,
-    0x83, 0xE4, 0xE0, 0x41, 0x83, 0xF9, 0x1F};
-const uint8_t Game::luaDebugDoStringBytes[32] = {
-    0x55, 0x56, 0x57, 0x53, 0x48, 0x81, 0xEC, 0x38,
-    0x09, 0x00, 0x00, 0x48, 0x8D, 0xAC, 0x24, 0x80,
-    0x00, 0x00, 0x00, 0x48, 0x89, 0xD6, 0x48, 0x89,
-    0xCB, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x85, 0xC0};
-
-CollectionStatus Realm::getStatus() const
-{
-    if (maps.empty())
-        return CollectionStatus::NOT_COLLECTED;
-
-    bool allCompleted = true;
-    for (const auto &map : maps)
-        if (map.status != CollectionStatus::COMPLETED)
-            allCompleted = false;
-
-    return allCompleted ? CollectionStatus::COMPLETED : CollectionStatus::NOT_COLLECTED;
-}
-
 void RHModel::Init()
 {
+    maps = Map::GetAll();
+    candles = Candle::GetAll();
+}
+
+std::vector<Candle> RHModel::GetCandlesInMap(Map map)
+{
+    std::vector<Candle> result;
+    for (const auto& candle : candles) {
+        if (candle.map == map.name) {
+            result.push_back(candle);
+        }
+    }
+    return result;
 }

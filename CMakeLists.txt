@@ -83,6 +83,11 @@ set(LIB_VERSION ${LIB_MAJOR_VERSION}.${LIB_MINOR_VERSION}.${LIB_PATCH_VERSION})
 set(RENAMED_CUR_NAME lib${CUR_NAME}-${LIB_VERSION}.so)
 add_compile_definitions(__LIB_VERSION__="${LIB_VERSION}") # You can use lib_version inside your sources
 
+add_compile_options(
+	-Wno-deprecated-literal-operator # to suppress warnings from nlohmann/json
+	-Wno-c23-extensions # to suppress warnings from some c++23 features
+)
+
 include_directories(${CMAKE_SOURCE_DIR}/include)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
@@ -98,7 +103,7 @@ target_link_libraries(
 	${CUR_NAME}
 	ciphered
 	log
-	dobby
+	${CMAKE_SOURCE_DIR}/lib/libdobby.a
 )
 
 add_custom_command(

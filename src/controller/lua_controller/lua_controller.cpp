@@ -45,3 +45,42 @@ void LuaController::ExecuteString(const char* luaCode) {
     std::lock_guard<std::mutex> lock(queueMutex);
     scriptQueue.push(std::string(luaCode));
 }
+
+void LuaController::LoadLevel(const char* levelName) {
+    char buffer[512];
+
+    std::snprintf(buffer, sizeof(buffer), R"(
+        local e = game:eventBarn():AddEventByMetaName("ChangeLevelWithFade")
+        e:levelName("%s")
+
+        e:fadeOutDuration(0)
+        e:fadeInDuration(0)
+        e:fadeHoldDuration(0)
+
+        e:isLevelComplete(false)
+        e:Start()
+    )", levelName);
+
+    ExecuteString(buffer);
+}
+
+void LuaController::TeleportToCoords(float x, float y, float z) {
+    char buffer[512];
+
+    std::snprintf(buffer, sizeof(buffer), R"(
+        local e = game:eventBarn():AddEventByMetaName("AvatarSetPos")
+        local m = game:markerBarn():CreateMarker(0)
+        m:pos({%f, %f, %f})
+
+        e:marker(m)
+        e:onGround(false)
+        e:breakHandHold(false)
+        e:killMomentum(false)
+        e:setLevelStartPosition(false)
+        e:Start()
+
+        game:markerBarn():ReleaseMarker(m)
+    )", x, y, z);
+
+    ExecuteString(buffer);
+}

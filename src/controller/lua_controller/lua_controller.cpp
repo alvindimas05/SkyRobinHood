@@ -14,11 +14,13 @@ static std::mutex queueMutex;
 
 static uint64_t hookedUpdate(uint64_t a1, uint64_t a2, uint64_t a3, unsigned int a4) {
     if (!luaState) {
+        LOGI("Storing Lua state from Game Update");
         luaState = *(uint64_t*)(a2 + 32);
     }
 
     std::lock_guard<std::mutex> lock(queueMutex);
     while (!scriptQueue.empty() && luaState) {
+        LOGI("Executing queued Lua script");
         std::string script = scriptQueue.front();
         scriptQueue.pop();
         originalLuaDebugDoString(luaState, const_cast<char*>(script.c_str()));
@@ -47,8 +49,8 @@ void LuaController::Init() {
         LOGE("Failed to find LuaDebugDoString function pattern.");
     }
 }
-
 void LuaController::ExecuteString(const char* luaCode) {
+    LOGI("Queueing Lua script for execution");
     std::lock_guard<std::mutex> lock(queueMutex);
     scriptQueue.push(std::string(luaCode));
 }

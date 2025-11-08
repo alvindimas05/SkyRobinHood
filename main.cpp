@@ -23,6 +23,7 @@ void InitLate()
 
 void Init()
 {
+    LOGI("Initializing");
     model.Init();
     view.Init();
     controller.Init();

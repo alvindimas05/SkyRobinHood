@@ -2,6 +2,7 @@
 #include "controller/controller.hpp"
 #include "utils/pattern_scanner/pattern_scanner.hpp"
 #include "dobby/dobby.h"
+#include "misc/Logger.h"
 #include <queue>
 #include <mutex>
 
@@ -33,11 +34,17 @@ void LuaController::Init() {
     if (updateAddr) {
         originalGameUpdate = (Game::Update)updateAddr;
         DobbyHook((void*)updateAddr, (void*)hookedUpdate, (void**)&originalGameUpdate);
+        LOGI("Hooked Game Update function at address: 0x%lx", updateAddr);
+    } else {
+        LOGE("Failed to find Game Update function pattern.");
     }
 
     uintptr_t luaDebugDoStringAddr = PatternScanner::FindPattern(game.luaDebugDoStringBytes, game.luaDebugDoStringMask);
     if (luaDebugDoStringAddr) {
         originalLuaDebugDoString = (Game::LuaDebugDoString)luaDebugDoStringAddr;
+        LOGI("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr);
+    } else {
+        LOGE("Failed to find LuaDebugDoString function pattern.");
     }
 }
 

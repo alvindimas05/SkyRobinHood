@@ -15,7 +15,7 @@ const char *RHView::GetStatusIcon(MapCollectionStatus status)
     }
 }
 
-void RHView::_Draw()
+void RHView::Draw()
 {
     ImGui::SetNextWindowSize(ImVec2(320, 480), ImGuiCond_Once);
     ImGui::SetNextWindowSizeConstraints(ImVec2(280, 400), ImVec2(FLT_MAX, FLT_MAX));
@@ -70,13 +70,6 @@ void RHView::_Draw()
 
     ImGui::PopStyleVar(5);
     ImGui::PopStyleColor(6);
-}
-
-void RHView::Draw()
-{
-    ImGui::NewFrame();
-    _Draw();
-    ImGui::Render();
 }
 void RHView::Init()
 {

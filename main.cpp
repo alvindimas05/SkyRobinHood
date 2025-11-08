@@ -1,25 +1,29 @@
-//
-// Created by Lukas on 22/07/2022.
-//
-
 #include "main.h"
-#include "include/Cipher/Cipher.h"
-#include "include/imgui/imgui.h"
-#include "include/misc/Logger.h"
+#include "Cipher/Cipher.h"
+#include "imgui/imgui.h"
+#include "misc/Logger.h"
 
+#include "utils/pattern_scanner/pattern_scanner.hpp"
+#include "model/model.hpp"
+#include "view/view.hpp"
+#include "controller/controller.hpp"
 
+RHModel model;
+RHController controller(model);
+RHView view(model, controller);
 
-// UI related functions
-void Menu(bool *_pOpen) { // _pOpen is passed by canvas. Used to close and open the mod locally
-    ImGui::Checkbox("Close me!", (bool *)(_pOpen));
+void Menu(bool *_pOpen)
+{
+    view.Draw();
 }
 
-// Called in a later stage of game initialisation
-void InitLate() {
-
+void InitLate()
+{
 }
 
-// Called at the start of the game
-void Init() {
-
+void Init()
+{
+    model.Init();
+    view.Init();
+    controller.Init();
 }

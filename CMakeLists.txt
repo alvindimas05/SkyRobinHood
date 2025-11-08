@@ -11,21 +11,24 @@ endif()
 ### Here starts set up of cross-compile variables ###
 
 if (WIN32)
-	set(_SUFFIX_CMD ".cmd")
-	set(_SUFFIX_EXE ".exe")
-	set(_HOST_TAG "windows-x86_64")
+    set(_SUFFIX_CMD ".cmd")
+    set(_SUFFIX_EXE ".exe")
+    set(_HOST_TAG "windows-x86_64")
+elseif(APPLE)
+    set(_SUFFIX_CMD "")
+    set(_SUFFIX_EXE "")
+    set(_HOST_TAG "darwin-x86_64")
 else()
-	# Assume the platform is Linux
-	set(_SUFFIX_CMD "")
-	set(_SUFFIX_EXE "")
-	set(_HOST_TAG "linux-x86_64")
-endif (WIN32)
+    set(_SUFFIX_CMD "")
+    set(_SUFFIX_EXE "")
+    set(_HOST_TAG "linux-x86_64")
+endif()
 
 set(CMAKE_SYSTEM_NAME Android)
 
 # USER CONFIGURATION
 set(HOST_TAG ${_HOST_TAG})													# The Host where we compile the lib
-set(ANDROID_NDK_VERSION "26.3.11579264")											# Only needed if you are not using standalone NDK, otherwise you can put this empty
+set(ANDROID_NDK_VERSION "29.0.14206865")											# Only needed if you are not using standalone NDK, otherwise you can put this empty
 set(ANDROID_ARCH "aarch64")													# Android architecture
 set(CMAKE_ANDROID_ARCH_ABI "arm64-v8a")												# Android ABI
 set(CMAKE_ANDROID_API 34)													# Android API version
@@ -83,10 +86,17 @@ add_compile_definitions(__LIB_VERSION__="${LIB_VERSION}") # You can use lib_vers
 include_directories(${CMAKE_SOURCE_DIR}/include)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
-add_library( # Sets the name of the library.
-	${CUR_NAME}
-	SHARED
+add_library(${CUR_NAME} SHARED
 	main.cpp
+    src/model/model.cpp
+    src/view/view.cpp
+    src/controller/controller.cpp
+    src/utils/pattern_scanner/pattern_scanner.cpp
+)
+
+target_include_directories(${CUR_NAME} PRIVATE
+	${CMAKE_SOURCE_DIR}/include
+	${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(

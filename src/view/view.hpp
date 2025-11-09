@@ -8,8 +8,7 @@ struct RHView
     RHController &controller;
     RHView(RHModel &m, RHController &c) : model(m), controller(c) {};
 
-    const char *GetStatusIcon(MapCollectionStatus status);
-    void _Draw();
+    // const char *GetStatusIcon(MapCollectionStatus status);
     void Draw();
     void Init();
 };

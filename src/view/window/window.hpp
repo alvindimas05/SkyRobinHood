@@ -2,7 +2,7 @@
 
 struct Window
 {
-    static void Init();
+    static void Start();
     static void PushStyle();
     static void PopStyle();
 };

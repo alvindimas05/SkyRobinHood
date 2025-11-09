@@ -3,6 +3,7 @@
 #include "view/button/button.hpp"
 #include "view/checkbox/checkbox.hpp"
 #include "view/text/text.hpp"
+#include "controller/candle_run_controller/candle_run_controller.hpp"
 
 // const char *RHView::GetStatusIcon(MapCollectionStatus status)
 // {
@@ -21,22 +22,22 @@
 
 void RHView::Draw()
 {
-    Window::Init();
+    Window::Start();
     Window::PushStyle();
 
     if (ImGui::Begin("Robin Hood", nullptr, ImGuiWindowFlags_NoCollapse))
     {
-        Button::PushStylePrimary();
-
+        // Start Candle Run Section
         float buttonWidth = ImGui::GetContentRegionAvail().x;
         float buttonHeight = 60.0f;
 
+        Button::PushStylePrimary();
         if (model.isRunning)
         {
             Button::PushStyleDanger();
             if (ImGui::Button("Stop Candle Run", ImVec2(buttonWidth, buttonHeight)))
             {
-                controller.StopCandleRun();
+                controller.candleRunController->Stop();
             }
             Button::PopStyleDanger();
         }
@@ -44,38 +45,66 @@ void RHView::Draw()
         {
             if (ImGui::Button("Start Candle Run", ImVec2(buttonWidth, buttonHeight)))
             {
-                controller.StartCandleRun();
+                controller.candleRunController->Start();
             }
         }
-
         Button::PopStylePrimary();
+
         ImGui::Separator();
 
-        Text::Primary("Select Maps:");
-    
-        ImGui::Separator();
-        
+        // End Candle Run Section
 
+        // Start Map Selection Section
         Checkbox::PushStyle();
 
-        static std::unordered_map<std::string, bool> mapSelections;
+        bool allSelected = (model.selectedMaps.size() == model.maps.size());
 
-        for (const auto& map : model.maps)
+        if (ImGui::Checkbox("Select All Maps", &allSelected))
         {
-            bool selected = mapSelections[map.name];
+            if (allSelected)
+                model.selectedMaps = model.maps;
+            else
+                model.selectedMaps.clear();
+        }
+
+        Text::Primary("Select Maps:");
+        ImGui::Separator();
+
+        for (const auto &map : model.maps)
+        {
+            bool selected = std::any_of(model.selectedMaps.begin(), model.selectedMaps.end(),
+                                        [&](const Map &m)
+                                        { return m.name == map.name; });
+
             if (ImGui::Checkbox(map.name.c_str(), &selected))
             {
-                mapSelections[map.name] = selected;
+                if (selected)
+                {
+                    if (std::none_of(model.selectedMaps.begin(), model.selectedMaps.end(),
+                                     [&](const Map &m)
+                                     { return m.name == map.name; }))
+                    {
+                        model.selectedMaps.push_back(map);
+                    }
+                }
+                else
+                {
+                    model.selectedMaps.erase(std::remove_if(model.selectedMaps.begin(), model.selectedMaps.end(),
+                                                            [&](const Map &m)
+                                                            { return m.name == map.name; }),
+                                             model.selectedMaps.end());
+                }
             }
         }
 
         Checkbox::PopStyle();
+        // End Map Selection Section
     }
 
     ImGui::End();
-
     Window::PopStyle();
 }
+
 void RHView::Init()
 {
 }

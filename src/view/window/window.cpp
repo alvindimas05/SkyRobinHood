@@ -1,9 +1,9 @@
 #include "window.hpp"
 
-void Window::Init()
+void Window::Start()
 {
     ImGui::SetNextWindowSize(ImVec2(600, 600), ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(300, 300), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(300, 400), ImVec2(FLT_MAX, FLT_MAX));
 }
 
 void Window::PushStyle()

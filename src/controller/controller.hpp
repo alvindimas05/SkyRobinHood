@@ -1,13 +1,14 @@
 #include "model/model.hpp"
-#include "utils/pattern_scanner/pattern_scanner.hpp"
 
 struct LuaController;
+struct CandleRunController;
 
 #pragma once
 struct RHController
 {
     RHModel &model;
     LuaController *luaController;
+    CandleRunController *candleRunController;
 
     RHController(RHModel &m);
     void Init();

@@ -1,7 +1,7 @@
 #include "main.h"
 #include "Cipher/Cipher.h"
 #include "imgui/imgui.h"
-#include "misc/Logger.h"
+#include "utils/log/log.hpp"
 
 #include "utils/pattern_scanner/pattern_scanner.hpp"
 #include "model/model.hpp"
@@ -23,7 +23,7 @@ void InitLate()
 
 void Init()
 {
-    LOGI("Initializing");
+    Log::info("Initializing...");
     model.Init();
     view.Init();
     controller.Init();

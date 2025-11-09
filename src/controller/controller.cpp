@@ -1,6 +1,6 @@
 #include "controller.hpp"
 #include "lua_controller/lua_controller.hpp"
-#include "misc/Logger.h"
+#include "utils/log/log.hpp"
 #include <thread>
 #include <chrono>
 
@@ -12,7 +12,7 @@ RHController::RHController(RHModel &m)
 
 void RHController::StartCandleRun()
 {
-    LOGI("Starting Candle Run");
+    Log::info("Starting Candle Run");
     if (model.isRunning)
         return;
 
@@ -41,7 +41,7 @@ void RHController::StartCandleRun()
 
 void RHController::StopCandleRun()
 {
-    LOGI("Stopping Candle Run");
+    Log::info("Stopping Candle Run");
     if (!model.isRunning)
         return;
 

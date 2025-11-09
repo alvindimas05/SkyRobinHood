@@ -2,7 +2,7 @@
 #include "controller/controller.hpp"
 #include "utils/pattern_scanner/pattern_scanner.hpp"
 #include "dobby/dobby.h"
-#include "misc/Logger.h"
+#include "utils/log/log.hpp"
 #include <queue>
 #include <mutex>
 
@@ -14,13 +14,12 @@ static std::mutex queueMutex;
 
 static uint64_t hookedUpdate(uint64_t a1, uint64_t a2, uint64_t a3, unsigned int a4) {
     if (!luaState) {
-        LOGI("Storing Lua state from Game Update");
+        Log::info("Storing Lua state from Game Update");
         luaState = *(uint64_t*)(a2 + 32);
     }
 
     std::lock_guard<std::mutex> lock(queueMutex);
     while (!scriptQueue.empty() && luaState) {
-        LOGI("Executing queued Lua script");
         std::string script = scriptQueue.front();
         scriptQueue.pop();
         originalLuaDebugDoString(luaState, const_cast<char*>(script.c_str()));
@@ -36,7 +35,7 @@ void LuaController::Init() {
     if (updateAddr) {
         originalGameUpdate = (Game::Update)updateAddr;
         DobbyHook((void*)updateAddr, (void*)hookedUpdate, (void**)&originalGameUpdate);
-        LOGI("Hooked Game Update function at address: 0x%lx", updateAddr);
+        Log::info("Hooked Game Update function at address: 0x%lx", updateAddr);
     } else {
         LOGE("Failed to find Game Update function pattern.");
     }
@@ -44,13 +43,12 @@ void LuaController::Init() {
     uintptr_t luaDebugDoStringAddr = PatternScanner::FindPattern(game.luaDebugDoStringBytes, game.luaDebugDoStringMask);
     if (luaDebugDoStringAddr) {
         originalLuaDebugDoString = (Game::LuaDebugDoString)luaDebugDoStringAddr;
-        LOGI("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr);
+        Log::info("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr);
     } else {
         LOGE("Failed to find LuaDebugDoString function pattern.");
     }
 }
 void LuaController::ExecuteString(const char* luaCode) {
-    LOGI("Queueing Lua script for execution");
     std::lock_guard<std::mutex> lock(queueMutex);
     scriptQueue.push(std::string(luaCode));
 }

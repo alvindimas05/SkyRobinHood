@@ -9,4 +9,5 @@ struct LuaController
     void ExecuteString(const char *luaCode);
     void TeleportToCoords(float x, float y, float z);
     void LoadLevel(const char *levelName);
+    void PlayTimeline(const char *timelineName);
 };

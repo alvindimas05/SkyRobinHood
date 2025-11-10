@@ -14,6 +14,8 @@ struct RHModel
     std::vector<Candle> candles;
     std::vector<Map> selectedMaps;
 
+    std::string candleRunMessage;
+
     void Init();
     std::vector<Candle> GetCandlesInMap(Map map);
 };

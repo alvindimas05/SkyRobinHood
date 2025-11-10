@@ -107,3 +107,12 @@ void LuaController::TeleportToCoords(float x, float y, float z)
 
     ExecuteString(buffer);
 }
+
+void LuaController::PlayTimeline(const char *timelineName)
+{
+    char buffer[64];
+
+    std::snprintf(buffer, sizeof(buffer), "PlayTimeline(game, '%s')", timelineName);
+
+    ExecuteString(buffer);
+}

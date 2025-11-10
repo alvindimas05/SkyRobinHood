@@ -25,18 +25,37 @@ void CandleRunController::Start()
             if (!controller.model.isRunning)
                 break;
 
+            std::vector<Candle> candles = controller.model.GetCandlesInMap(map);
+            if(candles.empty()){
+                Log::warn("Empty candles at map: %s", map.name.c_str());
+                continue;
+            }
+
             Log::info("Loading map: %s", map.name.c_str());
             controller.luaController->LoadLevel(map.name.c_str());
-            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-            for (const auto& candle : controller.model.GetCandlesInMap(map))
+            const auto& timeline = *map.timeline;
+            bool isTimelineRun = false;
+            for (const auto& candle : candles)
             {
                 if (!controller.model.isRunning)
                     break;
 
-                Log::info("Teleporting to at (%.2f, %.2f, %.2f)", candle.x, candle.y, candle.z);
+                Log::info("Teleporting to (%.2f, %.2f, %.2f)", candle.x, candle.y, candle.z);
                 controller.luaController->TeleportToCoords(candle.x, candle.y, candle.z);
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+                // If timeline candle name is empty, just run it after first candle.
+                // Either not, look for matching name and run the timeline after going to that candle.
+                // Make sure to set isTimelineRun to prevent running multiple times
+                if (map.timeline && !isTimelineRun && (timeline.candleName.empty() || candle.name == timeline.candleName)) {
+                    isTimelineRun = true;
+
+                    Log::info("Playing timeline for %i seconds: %s", timeline.duration, timeline.name.c_str());
+                    controller.luaController->PlayTimeline(timeline.name.c_str());
+                    std::this_thread::sleep_for(std::chrono::seconds(timeline.duration));
+                }
             }
         }
 

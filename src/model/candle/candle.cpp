@@ -4,6 +4,16 @@ static constexpr unsigned char candlesJson[] = {
 #embed "../../../assets/Candles.json"
 };
 
+static const std::unordered_set<std::string> validCandleNames = {
+    "Candle",
+    "Plant",
+    "Season Candle",
+    "Bonus Cake",
+    "Rainbow Cake",
+    "Candle & Winged Light",
+    "Trial of Earth Statue",
+    "Trial of Earth End"};
+
 Candle::Candle(const nlohmann::json &j)
 {
     name = j["name"].get<std::string>();
@@ -19,21 +29,13 @@ std::vector<Candle> Candle::GetAll()
         reinterpret_cast<const char *>(candlesJson),
         reinterpret_cast<const char *>(candlesJson + sizeof(candlesJson)));
 
-    static const std::unordered_set<std::string> validNames = {
-        "Candle",
-        "Plant",
-        "Season Candle",
-        "Bonus Cake",
-        "Rainbow Cake",
-        "Candle & Winged Light"};
-
     std::vector<Candle> candles;
     candles.reserve(j.size());
 
     for (const auto &item : j)
     {
         std::string name = item["name"].get<std::string>();
-        if (validNames.count(name))
+        if (validCandleNames.count(name))
         {
             candles.emplace_back(item);
         }

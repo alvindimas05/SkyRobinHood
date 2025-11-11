@@ -1,7 +1,7 @@
 name: Build and Release
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,29 +11,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ------------------------------
+      # Cache APT packages
+      # ------------------------------
+      - name: Cache APT packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /var/cache/apt
+            /var/lib/apt/lists
+          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y ninja-build cmake wget unzip
+          sudo apt install -y ninja-build cmake wget unzip jq
+
+      # ------------------------------
+      # Cache Android SDK + NDK
+      # ------------------------------
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android
+            ${{ env.ANDROID_SDK_ROOT }}
+          key: ${{ runner.os }}-android-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-android-
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Install Android NDK
         run: |
-            yes | sdkmanager --install "ndk;29.0.14206865"
-            echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-            echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> $GITHUB_ENV
+          yes | sdkmanager --install "ndk;29.0.14206865"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> $GITHUB_ENV
 
-      - name: Extract version from config.json
-        id: version
-        run: |
-            MAJOR=$(jq -r '.majorVersion' config.json)
-            MINOR=$(jq -r '.minorVersion' config.json)
-            PATCH=$(jq -r '.patchVersion' config.json)
-            VERSION="v${MAJOR}.${MINOR}.${PATCH}"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "Detected version: $VERSION"
+      # ------------------------------
+      # Cache CMake build artifacts
+      # ------------------------------
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/
+            ~/.cache
+          key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', 'config.json', '**/*.cpp', '**/*.h') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-
 
       - name: Configure CMake with Ninja
         run: |
@@ -62,32 +91,9 @@ jobs:
           name: libRobinHood
           path: build/
 
-      - name: Extract version from config.json
-        id: version
-        run: |
-          MAJOR=$(jq -r '.majorVersion' config.json)
-          MINOR=$(jq -r '.minorVersion' config.json)
-          PATCH=$(jq -r '.patchVersion' config.json)
-          VERSION="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Using version: $VERSION"
-
-      - name: Create Git tag if missing
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
-            git tag "$VERSION"
-            git push origin "$VERSION"
-            echo "Created and pushed tag $VERSION"
-          else
-            echo "Tag $VERSION already exists."
-          fi
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: "RobinHood ${{ steps.version.outputs.version }}"
           files: build/libRobinHood*.so
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

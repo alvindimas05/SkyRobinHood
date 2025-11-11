@@ -16,16 +16,24 @@ jobs:
           sudo apt update
           sudo apt install -y ninja-build cmake wget unzip
 
-      - name: Setup Android SDK & NDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          sdk-version: 34
-          ndk-version: 29.0.14206865
+          packages: |
+            cmdline-tools;latest
+            platform-tools
+            platforms;android-34
+            build-tools;34.0.0
+
+      - name: Install Android NDK
+        run: |
+          yes | sdkmanager --install "ndk;29.0.14206865"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> $GITHUB_ENV
 
       - name: Configure CMake with Ninja
         run: |
-          cmake -S . -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build with Ninja
         run: cmake --build build --parallel

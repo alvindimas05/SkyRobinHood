@@ -25,6 +25,16 @@ jobs:
             echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
             echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> $GITHUB_ENV
 
+      - name: Extract version from config.json
+        id: version
+        run: |
+            MAJOR=$(jq -r '.majorVersion' config.json)
+            MINOR=$(jq -r '.minorVersion' config.json)
+            PATCH=$(jq -r '.patchVersion' config.json)
+            VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Detected version: $VERSION"
+
       - name: Configure CMake with Ninja
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -52,9 +62,32 @@ jobs:
           name: libRobinHood
           path: build/
 
+      - name: Extract version from config.json
+        id: version
+        run: |
+          MAJOR=$(jq -r '.majorVersion' config.json)
+          MINOR=$(jq -r '.minorVersion' config.json)
+          PATCH=$(jq -r '.patchVersion' config.json)
+          VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using version: $VERSION"
+
+      - name: Create Git tag if missing
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
+            git tag "$VERSION"
+            git push origin "$VERSION"
+            echo "Created and pushed tag $VERSION"
+          else
+            echo "Tag $VERSION already exists."
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: "RobinHood ${{ steps.version.outputs.version }}"
           files: build/libRobinHood*.so
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

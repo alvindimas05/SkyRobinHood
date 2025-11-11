@@ -35,32 +35,72 @@ static uint64_t hookedUpdate(uint64_t a1, uint64_t a2, uint64_t a3, unsigned int
 void LuaController::Init()
 {
     auto &game = controller.model.game;
+    try
+    {
+        uintptr_t updateAddr = PatternScanner::FindPattern(game.updateBytes, game.updateMask);
+        if (updateAddr)
+        {
+            if (!PatternScanner::IsValidAddress(updateAddr))
+            {
+                Log::error("Game Update address is not valid at: 0x%lx", updateAddr);
+            }
+            else
+            {
+                originalGameUpdate = (Game::Update)updateAddr;
+                DobbyHook((void *)updateAddr, (void *)hookedUpdate, (void **)&originalGameUpdate);
+                Log::info("Hooked Game Update function at address: 0x%lx", updateAddr);
+            }
+        }
+        else
+        {
+            Log::error("Failed to find Game Update function pattern.");
+        }
+    }
+    catch (...)
+    {
+        Log::error("Exception when trying to find Game Update function pattern.");
+    }
 
-    uintptr_t updateAddr = PatternScanner::FindPattern(game.updateBytes, game.updateMask);
-    if (updateAddr)
+    try
     {
-        originalGameUpdate = (Game::Update)updateAddr;
-        DobbyHook((void *)updateAddr, (void *)hookedUpdate, (void **)&originalGameUpdate);
-        Log::info("Hooked Game Update function at address: 0x%lx", updateAddr);
+        uintptr_t luaDebugDoStringAddr = PatternScanner::FindPattern(game.luaDebugDoStringBytes, game.luaDebugDoStringMask);
+        if (luaDebugDoStringAddr)
+        {
+            if (!PatternScanner::IsValidAddress(luaDebugDoStringAddr))
+            {
+                Log::error("LuaDebugDoString address is not valid at: 0x%lx", luaDebugDoStringAddr);
+            }
+            else
+            {
+                originalLuaDebugDoString = (Game::LuaDebugDoString)luaDebugDoStringAddr;
+                Log::info("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr);
+            }
+        }
+        else
+        {
+            Log::error("Failed to find LuaDebugDoString function pattern.");
+        }
     }
-    else
+    catch (...)
     {
-        LOGE("Failed to find Game Update function pattern.");
-    }
-
-    uintptr_t luaDebugDoStringAddr = PatternScanner::FindPattern(game.luaDebugDoStringBytes, game.luaDebugDoStringMask);
-    if (luaDebugDoStringAddr)
-    {
-        originalLuaDebugDoString = (Game::LuaDebugDoString)luaDebugDoStringAddr;
-        Log::info("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr);
-    }
-    else
-    {
-        LOGE("Failed to find LuaDebugDoString function pattern.");
+        Log::error("Exception when trying to find LuaDebugDoString function pattern.");
     }
 }
+
 void LuaController::ExecuteString(const char *luaCode)
 {
+    if (originalGameUpdate == nullptr)
+    {
+        Log::error("Failed to Lua ExecuteString because Game Update is not hooked");
+        return;
+    }
+
+    if (originalLuaDebugDoString == nullptr)
+    {
+        Log::error("Failed to Lua ExecuteString because LuaDebugDoString is not found");
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(queueMutex);
     scriptQueue.push(std::string(luaCode));
 }

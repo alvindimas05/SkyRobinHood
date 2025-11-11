@@ -147,3 +147,51 @@ std::vector<PatternScanner::MemoryRegion> PatternScanner::GetExecutableRegions()
 
     return regions;
 }
+
+bool PatternScanner::IsValidAddress(uintptr_t address)
+{
+#ifdef _WIN32
+    MEMORY_BASIC_INFORMATION mbi;
+    if (VirtualQuery((void *)address, &mbi, sizeof(mbi)))
+    {
+        return (mbi.State == MEM_COMMIT) &&
+               (mbi.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY));
+    }
+    return false;
+#elif defined(__APPLE__)
+    vm_address_t addr = (vm_address_t)address;
+    vm_size_t size;
+    vm_region_basic_info_data_64_t info;
+    mach_msg_type_number_t count = VM_REGION_BASIC_INFO_COUNT_64;
+    mach_port_t object_name;
+
+    kern_return_t ret = vm_region_64(mach_task_self(), &addr, &size,
+                                     VM_REGION_BASIC_INFO_64,
+                                     (vm_region_info_t)&info, &count, &object_name);
+
+    return (ret == KERN_SUCCESS) && (info.protection & VM_PROT_EXECUTE);
+#else // Linux/Android
+    // Parse /proc/self/maps
+    FILE *maps = fopen("/proc/self/maps", "r");
+    if (!maps)
+        return false;
+
+    char line[512];
+    bool valid = false;
+    while (fgets(line, sizeof(line), maps))
+    {
+        uintptr_t start, end;
+        char perms[5];
+        if (sscanf(line, "%lx-%lx %4s", &start, &end, perms) == 3)
+        {
+            if (address >= start && address < end && perms[2] == 'x')
+            {
+                valid = true;
+                break;
+            }
+        }
+    }
+    fclose(maps);
+    return valid;
+#endif
+}

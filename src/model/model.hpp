@@ -8,6 +8,7 @@
 struct RHModel
 {
     bool isRunning = false;
+    bool isTSMLoaded = false;
     Game game;
 
     std::vector<Map> maps;

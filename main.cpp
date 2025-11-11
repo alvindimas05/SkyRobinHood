@@ -25,6 +25,6 @@ void Init()
 {
     Log::info("Initializing...");
     model.Init();
-    view.Init();
     controller.Init();
+    view.Init();
 }

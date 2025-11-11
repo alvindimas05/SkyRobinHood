@@ -1,5 +1,6 @@
 #include <thread>
 #include <atomic>
+#include <format>
 #include "candle_run_controller.hpp"
 #include "controller/controller.hpp"
 #include "controller/lua_controller/lua_controller.hpp"
@@ -32,8 +33,11 @@ void CandleRunController::Start()
             }
 
             Log::info("Loading map: %s", map.name.c_str());
+            controller.model.candleRunMessage = std::format("Loading {}", map.name);
             controller.luaController->LoadLevel(map.name.c_str());
             std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+            controller.model.candleRunMessage = std::format("Processing candles on {}", map.name);
 
             const auto& timeline = *map.timeline;
             bool isTimelineRun = false;
@@ -41,8 +45,6 @@ void CandleRunController::Start()
             {
                 if (!controller.model.isRunning)
                     break;
-
-                Log::info("Teleporting to (%.2f, %.2f, %.2f)", candle.x, candle.y, candle.z);
                 controller.luaController->TeleportToCoords(candle.x, candle.y, candle.z);
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
@@ -53,6 +55,7 @@ void CandleRunController::Start()
                     isTimelineRun = true;
 
                     Log::info("Playing timeline for %i seconds: %s", timeline.duration, timeline.name.c_str());
+                    controller.model.candleRunMessage = std::format("Playing timeline for {} seconds on {}", timeline.duration, timeline.name);
                     controller.luaController->PlayTimeline(timeline.name.c_str());
                     std::this_thread::sleep_for(std::chrono::seconds(timeline.duration));
                 }
@@ -60,7 +63,8 @@ void CandleRunController::Start()
         }
 
         controller.model.isRunning = false;
-        Log::info("Candle run completed."); });
+        Log::info("Candle run completed.");
+        controller.model.candleRunMessage = ""; });
 }
 
 void CandleRunController::Stop()

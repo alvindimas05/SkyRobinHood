@@ -18,18 +18,12 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            cmdline-tools;latest
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
 
       - name: Install Android NDK
         run: |
-          yes | sdkmanager --install "ndk;29.0.14206865"
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> $GITHUB_ENV
+            yes | sdkmanager --install "ndk;29.0.14206865"
+            echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+            echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/29.0.14206865" >> $GITHUB_ENV
 
       - name: Configure CMake with Ninja
         run: |

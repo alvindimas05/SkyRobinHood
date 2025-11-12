@@ -8,7 +8,6 @@
 struct RHModel
 {
     bool isRunning = false;
-    bool isTSMLoaded = false;
     Game game;
 
     std::vector<Map> maps;
@@ -16,6 +15,7 @@ struct RHModel
     std::vector<Map> selectedMaps;
 
     std::string candleRunMessage;
+    std::string candleRunErrorMessage;
 
     void Init();
     std::vector<Candle> GetCandlesInMap(Map map);

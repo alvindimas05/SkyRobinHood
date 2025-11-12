@@ -27,9 +27,8 @@ public:
         size_t size;
         uint8_t *data;
     };
-    static uintptr_t FindPattern(const uint8_t *pattern, const char *mask, uintptr_t start = 0, size_t search_size = 0);
-    static uintptr_t FindPattern(const std::vector<uint8_t> &pattern, const std::string &mask);
-    static bool IsValidAddress(uintptr_t address);
+    static uintptr_t Find(const uint8_t *pattern, const char *mask, uintptr_t start = 0, size_t search_size = 0);
+    static uintptr_t Find(const std::vector<uint8_t> &pattern, const std::string &mask);
 
 private:
     static uintptr_t SearchInRegion(const uint8_t *data, size_t size, const uint8_t *pattern, const char *mask);

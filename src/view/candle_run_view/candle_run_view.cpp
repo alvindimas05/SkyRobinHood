@@ -2,9 +2,9 @@
 
 void CandleRunView::Draw()
 {
-    if (!model.isTSMLoaded)
+    if (!model.candleRunErrorMessage.empty())
     {
-        Text::Primary("Please load TSM to run the Candle Run feature.");
+        Text::Primary(model.candleRunErrorMessage.c_str());
         return;
     }
 

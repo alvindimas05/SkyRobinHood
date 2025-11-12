@@ -1,6 +1,6 @@
 #include "pattern_scanner.hpp"
 
-uintptr_t PatternScanner::FindPattern(const uint8_t *pattern, const char *mask, uintptr_t start, size_t search_size)
+uintptr_t PatternScanner::Find(const uint8_t *pattern, const char *mask, uintptr_t start, size_t search_size)
 {
     std::vector<MemoryRegion> regions = GetExecutableRegions();
 
@@ -37,9 +37,9 @@ uintptr_t PatternScanner::FindPattern(const uint8_t *pattern, const char *mask, 
     return 0;
 }
 
-uintptr_t PatternScanner::FindPattern(const std::vector<uint8_t> &pattern, const std::string &mask)
+uintptr_t PatternScanner::Find(const std::vector<uint8_t> &pattern, const std::string &mask)
 {
-    return FindPattern(pattern.data(), mask.c_str());
+    return Find(pattern.data(), mask.c_str());
 }
 
 uintptr_t PatternScanner::SearchInRegion(const uint8_t *data, size_t size, const uint8_t *pattern, const char *mask)
@@ -97,25 +97,28 @@ std::vector<PatternScanner::MemoryRegion> PatternScanner::GetExecutableRegions()
         address = (uintptr_t)mbi.BaseAddress + mbi.RegionSize;
     }
 #elif defined(__ANDROID__)
-    // Android implementation using dl_iterate_phdr
     dl_iterate_phdr([](struct dl_phdr_info *info, size_t size, void *data) -> int
                     {
-            auto* regions = static_cast<std::vector<MemoryRegion>*>(data);
+        auto* regions = static_cast<std::vector<MemoryRegion>*>(data);
+        
+        // Only scan libBootloader.so
+        if (!info->dlpi_name || !strstr(info->dlpi_name, "libBootloader.so")) {
+            return 0;
+        }
+        
+        for (int i = 0; i < info->dlpi_phnum; i++) {
+            const ElfW(Phdr)* phdr = &info->dlpi_phdr[i];
             
-            for (int i = 0; i < info->dlpi_phnum; i++) {
-                const ElfW(Phdr)* phdr = &info->dlpi_phdr[i];
-                
-                // Look for executable segments (PT_LOAD with PF_X)
-                if (phdr->p_type == PT_LOAD && (phdr->p_flags & PF_X)) {
-                    MemoryRegion region;
-                    region.base = info->dlpi_addr + phdr->p_vaddr;
-                    region.size = phdr->p_memsz;
-                    region.data = (uint8_t*)region.base;
-                    regions->push_back(region);
-                }
+            if (phdr->p_type == PT_LOAD && (phdr->p_flags & PF_X)) {
+                MemoryRegion region;
+                region.base = info->dlpi_addr + phdr->p_vaddr;
+                region.size = phdr->p_memsz;
+                region.data = (uint8_t*)region.base;
+                regions->push_back(region);
             }
-            
-            return 0; }, &regions);
+        }
+        
+        return 0; }, &regions);
 #else
     // Linux/Unix implementation using /proc/self/maps
     std::ifstream maps("/proc/self/maps");
@@ -146,52 +149,4 @@ std::vector<PatternScanner::MemoryRegion> PatternScanner::GetExecutableRegions()
 #endif
 
     return regions;
-}
-
-bool PatternScanner::IsValidAddress(uintptr_t address)
-{
-#ifdef _WIN32
-    MEMORY_BASIC_INFORMATION mbi;
-    if (VirtualQuery((void *)address, &mbi, sizeof(mbi)))
-    {
-        return (mbi.State == MEM_COMMIT) &&
-               (mbi.Protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY));
-    }
-    return false;
-#elif defined(__APPLE__)
-    vm_address_t addr = (vm_address_t)address;
-    vm_size_t size;
-    vm_region_basic_info_data_64_t info;
-    mach_msg_type_number_t count = VM_REGION_BASIC_INFO_COUNT_64;
-    mach_port_t object_name;
-
-    kern_return_t ret = vm_region_64(mach_task_self(), &addr, &size,
-                                     VM_REGION_BASIC_INFO_64,
-                                     (vm_region_info_t)&info, &count, &object_name);
-
-    return (ret == KERN_SUCCESS) && (info.protection & VM_PROT_EXECUTE);
-#else // Linux/Android
-    // Parse /proc/self/maps
-    FILE *maps = fopen("/proc/self/maps", "r");
-    if (!maps)
-        return false;
-
-    char line[512];
-    bool valid = false;
-    while (fgets(line, sizeof(line), maps))
-    {
-        uintptr_t start, end;
-        char perms[5];
-        if (sscanf(line, "%lx-%lx %4s", &start, &end, perms) == 3)
-        {
-            if (address >= start && address < end && perms[2] == 'x')
-            {
-                valid = true;
-                break;
-            }
-        }
-    }
-    fclose(maps);
-    return valid;
-#endif
 }

@@ -19,7 +19,7 @@ RHController::RHController(RHModel &m)
     candleRunController = new CandleRunController(*this);
 }
 
-void RHController::CheckForTSM()
+bool RHController::CheckForTSM()
 {
     try
     {
@@ -27,7 +27,7 @@ void RHController::CheckForTSM()
         if (!in)
         {
             Log::error("Cannot open /proc/self/maps");
-            return;
+            return false;
         }
         std::string line;
         std::set<std::string> so_paths;
@@ -43,8 +43,7 @@ void RHController::CheckForTSM()
             if (p.contains("TSM"))
             {
                 Log::info("TSM is loaded!");
-                model.isTSMLoaded = true;
-                return;
+                return true;
             }
         }
     }
@@ -52,14 +51,18 @@ void RHController::CheckForTSM()
     {
         Log::error("Exception when trying to check for TSM");
     }
+    return false;
 }
 
 void RHController::Init()
 {
-    // luaController->Init();
+    luaController->Init();
     std::thread([this]()
                 {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        CheckForTSM(); })
+        auto result = CheckForTSM();
+        if(!result){
+            model.candleRunErrorMessage = "Please load TSM to run the Candle Run feature";
+        } })
         .detach();
 }

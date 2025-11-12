@@ -14,5 +14,5 @@ struct RHController
     void Init();
     void StartCandleRun();
     void StopCandleRun();
-    void CheckForTSM();
+    bool CheckForTSM();
 };

@@ -37,19 +37,12 @@ void LuaController::Init()
     auto &game = controller.model.game;
     try
     {
-        uintptr_t updateAddr = PatternScanner::FindPattern(game.updateBytes, game.updateMask);
+        uintptr_t updateAddr = PatternScanner::Find(game.updateBytes, game.updateMask);
         if (updateAddr)
         {
-            if (!PatternScanner::IsValidAddress(updateAddr))
-            {
-                Log::error("Game Update address is not valid at: 0x%lx", updateAddr);
-            }
-            else
-            {
-                originalGameUpdate = (Game::Update)updateAddr;
-                DobbyHook((void *)updateAddr, (void *)hookedUpdate, (void **)&originalGameUpdate);
-                Log::info("Hooked Game Update function at address: 0x%lx", updateAddr);
-            }
+            originalGameUpdate = (Game::Update)updateAddr;
+            DobbyHook((void *)updateAddr, (void *)hookedUpdate, (void **)&originalGameUpdate);
+            Log::info("Hooked Game Update function at address: 0x%lx", updateAddr - game.baseAddr);
         }
         else
         {
@@ -63,18 +56,11 @@ void LuaController::Init()
 
     try
     {
-        uintptr_t luaDebugDoStringAddr = PatternScanner::FindPattern(game.luaDebugDoStringBytes, game.luaDebugDoStringMask);
+        uintptr_t luaDebugDoStringAddr = PatternScanner::Find(game.luaDebugDoStringBytes, game.luaDebugDoStringMask);
         if (luaDebugDoStringAddr)
         {
-            if (!PatternScanner::IsValidAddress(luaDebugDoStringAddr))
-            {
-                Log::error("LuaDebugDoString address is not valid at: 0x%lx", luaDebugDoStringAddr);
-            }
-            else
-            {
-                originalLuaDebugDoString = (Game::LuaDebugDoString)luaDebugDoStringAddr;
-                Log::info("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr);
-            }
+            originalLuaDebugDoString = (Game::LuaDebugDoString)luaDebugDoStringAddr;
+            Log::info("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr - game.baseAddr);
         }
         else
         {
@@ -84,6 +70,17 @@ void LuaController::Init()
     catch (...)
     {
         Log::error("Exception when trying to find LuaDebugDoString function pattern.");
+    }
+
+    if (originalGameUpdate == nullptr)
+    {
+        controller.model.candleRunErrorMessage = "Failed to find Game Update function";
+        return;
+    }
+    if (originalLuaDebugDoString == nullptr)
+    {
+        controller.model.candleRunErrorMessage = "Failed to find LuaDebugDoString";
+        return;
     }
 }
 

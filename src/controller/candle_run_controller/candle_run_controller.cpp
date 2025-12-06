@@ -4,8 +4,10 @@
 #include "candle_run_controller.hpp"
 #include "controller/controller.hpp"
 #include "controller/lua_controller/lua_controller.hpp"
+#include "controller/game_mod_controller/game_mod_controller.hpp"
 #include "model/model.hpp"
 #include "utils/log/log.hpp"
+#include "model/timelime/timeline.hpp"
 
 static std::thread workerThread;
 
@@ -54,10 +56,16 @@ void CandleRunController::Start()
                 if (map.timeline && !isTimelineRun && (timeline.candleName.empty() || candle.name == timeline.candleName)) {
                     isTimelineRun = true;
 
-                    Log::info("Playing timeline for %i seconds: %s", timeline.duration, timeline.name.c_str());
+                    int waitDuration = timeline.duration;
+                    if (controller.gameModController->SetGameSpeedToMax()) {
+                        waitDuration = TIMELINE_FAST_DURATION;
+                    }
+
+                    Log::info("Playing timeline for %s for %i", timeline.name.c_str(), waitDuration);
                     controller.model.candleRunMessage = std::format("Playing timeline {} for {} seconds", timeline.duration, timeline.name);
                     controller.luaController->PlayTimeline(timeline.name.c_str());
-                    std::this_thread::sleep_for(std::chrono::seconds(timeline.duration));
+                    std::this_thread::sleep_for(std::chrono::seconds(waitDuration));
+                    controller.gameModController->ResetGameSpeed();
                 }
             }
         }

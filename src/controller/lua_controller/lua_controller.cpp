@@ -46,6 +46,7 @@ void LuaController::Init()
         }
         else
         {
+            controller.model.errorMessage = "Failed to find Game Update function";
             Log::error("Failed to find Game Update function pattern.");
         }
     }
@@ -64,6 +65,7 @@ void LuaController::Init()
         }
         else
         {
+            controller.model.errorMessage = "Failed to find LuaDebugDoString function";
             Log::error("Failed to find LuaDebugDoString function pattern.");
         }
     }
@@ -74,12 +76,12 @@ void LuaController::Init()
 
     if (originalGameUpdate == nullptr)
     {
-        controller.model.candleRunErrorMessage = "Failed to find Game Update function";
+        controller.model.errorMessage = "Failed to find Game Update function";
         return;
     }
     if (originalLuaDebugDoString == nullptr)
     {
-        controller.model.candleRunErrorMessage = "Failed to find LuaDebugDoString";
+        controller.model.errorMessage = "Failed to find LuaDebugDoString";
         return;
     }
 }
@@ -97,7 +99,7 @@ void LuaController::ExecuteString(const char *luaCode)
         Log::error("Failed to Lua ExecuteString because LuaDebugDoString is not found");
         return;
     }
-
+    
     std::lock_guard<std::mutex> lock(queueMutex);
     scriptQueue.push(std::string(luaCode));
 }

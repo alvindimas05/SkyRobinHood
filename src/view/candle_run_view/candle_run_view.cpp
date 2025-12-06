@@ -2,7 +2,13 @@
 
 void CandleRunView::Draw()
 {
-    if (!model.candleRunErrorMessage.empty())
+    if (!model.errorMessage.empty())
+    {
+        Text::Primary(model.errorMessage.c_str());
+        return;
+    }
+
+    if(!model.candleRunErrorMessage.empty())
     {
         Text::Primary(model.candleRunErrorMessage.c_str());
         return;

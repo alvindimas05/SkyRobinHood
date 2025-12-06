@@ -55,7 +55,7 @@ void CandleRunController::Start()
                     isTimelineRun = true;
 
                     Log::info("Playing timeline for %i seconds: %s", timeline.duration, timeline.name.c_str());
-                    controller.model.candleRunMessage = std::format("Playing timeline for {} seconds on {}", timeline.duration, timeline.name);
+                    controller.model.candleRunMessage = std::format("Playing timeline {} for {} seconds", timeline.duration, timeline.name);
                     controller.luaController->PlayTimeline(timeline.name.c_str());
                     std::this_thread::sleep_for(std::chrono::seconds(timeline.duration));
                 }
@@ -64,7 +64,8 @@ void CandleRunController::Start()
 
         controller.model.isRunning = false;
         Log::info("Candle run completed.");
-        controller.model.candleRunMessage = ""; });
+        controller.model.candleRunMessage = "";
+        workerThread.detach(); });
 }
 
 void CandleRunController::Stop()

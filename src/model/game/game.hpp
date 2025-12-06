@@ -11,7 +11,6 @@ struct Game
 
     typedef uint64_t (*LuaDebugDoString)(uint64_t state, char *str);
     static const uint8_t luaDebugDoStringBytes[40];
-    const char *luaDebugDoStringMask = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????";
-
+    const char *luaDebugDoStringMask = "xxxxxxxxxxxxxxxxxxxxxxxxxx????xxxxxxxx";
     void Init();
 };

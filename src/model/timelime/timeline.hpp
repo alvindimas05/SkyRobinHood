@@ -1,6 +1,7 @@
 #include <string>
 
-static const int TIMELINE_FAST_DURATION = 10;
+static const float TIMELINE_SPEED_MULTIPLIER = 0.1;
+static const int TIMELINE_EXTRA_DELAY = 2;
 struct Timeline
 {
     std::string name;

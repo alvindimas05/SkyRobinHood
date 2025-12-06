@@ -11,7 +11,7 @@
 static std::thread workerThread;
 static std::vector <Timeline> timelines = {
     Timeline("Ap11_Intro_Ending", 25),
-    Timeline("Ap10_Intro_Ending", 25),
+    // Timeline("Ap10_Intro_Ending", 25),
     Timeline("APEnd_season_04", 60)
 };
 void D4CController::Start()
@@ -41,7 +41,7 @@ void D4CController::Start()
 
             int waitDuration = timeline.duration;
             if(controller.gameModController->SetGameSpeedToMax()) {
-                waitDuration = TIMELINE_FAST_DURATION;
+                waitDuration = (waitDuration * TIMELINE_SPEED_MULTIPLIER) + TIMELINE_EXTRA_DELAY;
             }
             controller.model.convertingMessage = std::format("Playing timeline {} for {} seconds", timeline.name, waitDuration);
 

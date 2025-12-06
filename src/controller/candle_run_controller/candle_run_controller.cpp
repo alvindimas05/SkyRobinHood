@@ -58,7 +58,7 @@ void CandleRunController::Start()
 
                     int waitDuration = timeline.duration;
                     if (controller.gameModController->SetGameSpeedToMax()) {
-                        waitDuration = TIMELINE_FAST_DURATION;
+                        waitDuration = (waitDuration * TIMELINE_SPEED_MULTIPLIER) + TIMELINE_EXTRA_DELAY;
                     }
 
                     Log::info("Playing timeline for %s for %i", timeline.name.c_str(), waitDuration);

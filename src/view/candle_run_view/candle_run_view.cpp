@@ -8,7 +8,7 @@ void CandleRunView::Draw()
         return;
     }
 
-    if(!model.candleRunErrorMessage.empty())
+    if (!model.candleRunErrorMessage.empty())
     {
         Text::Primary(model.candleRunErrorMessage.c_str());
         return;

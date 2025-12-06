@@ -19,6 +19,8 @@ void Menu(bool *_pOpen)
 
 void InitLate()
 {
+    Log::info("Initializing late...");
+    model.InitLate();
 }
 
 void Init()

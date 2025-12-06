@@ -4,6 +4,7 @@
 struct LuaController;
 struct CandleRunController;
 struct D4CController;
+struct GameModController;
 
 #pragma once
 struct RHController
@@ -12,6 +13,7 @@ struct RHController
     LuaController *luaController;
     CandleRunController *candleRunController;
     D4CController *d4cController;
+    GameModController *gameModController;
 
     RHController(RHModel &m);
     void Init();

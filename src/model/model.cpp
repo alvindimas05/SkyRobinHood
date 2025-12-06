@@ -7,6 +7,11 @@ void RHModel::Init()
     candles = Candle::GetAll();
 }
 
+void RHModel::InitLate()
+{
+    game.InitLate();
+}
+
 std::vector<Candle> RHModel::GetCandlesInMap(Map map)
 {
     std::vector<Candle> result;

@@ -3,10 +3,17 @@
 #include "d4c_controller.hpp"
 #include "controller/controller.hpp"
 #include "controller/lua_controller/lua_controller.hpp"
+#include "controller/game_mod_controller/game_mod_controller.hpp"
 #include "model/model.hpp"
 #include "utils/log/log.hpp"
+#include "model/timelime/timeline.hpp"
 
 static std::thread workerThread;
+static std::vector <Timeline> timelines = {
+    Timeline("Ap11_Intro_Ending", 25),
+    Timeline("Ap10_Intro_Ending", 25),
+    Timeline("APEnd_season_04", 60)
+};
 void D4CController::Start()
 {
     if (controller.model.isConverting)
@@ -25,17 +32,22 @@ void D4CController::Start()
         controller.luaController->LoadLevel("CandleSpace");
         std::this_thread::sleep_for(std::chrono::seconds(10));
 
-        controller.model.convertingMessage = std::format("Playing AP11 Intro Ending Timeline for {} seconds", 25);
-        controller.luaController->PlayTimeline("Ap11_Intro_Ending");
-        std::this_thread::sleep_for(std::chrono::seconds(25));
+        for (const auto& timeline : timelines) {
+            controller.luaController->PlayTimeline(timeline.name.c_str());
+            
+            if(timeline.name == "APEnd_season_04") {
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+            }
 
-        controller.model.convertingMessage = std::format("Playing AP10 Intro Ending Timeline for {} seconds", 25);
-        controller.luaController->PlayTimeline("Ap10_Intro_Ending");
-        std::this_thread::sleep_for(std::chrono::seconds(25));
+            int waitDuration = timeline.duration;
+            if(controller.gameModController->SetGameSpeedToMax()) {
+                waitDuration = TIMELINE_FAST_DURATION;
+            }
+            controller.model.convertingMessage = std::format("Playing timeline {} for {} seconds", timeline.name, waitDuration);
 
-        controller.model.convertingMessage = std::format("Playing AP End Season 4 Timeline for {} seconds", 60);
-        controller.luaController->PlayTimeline("APEnd_season_04");
-        std::this_thread::sleep_for(std::chrono::seconds(60));
+            std::this_thread::sleep_for(std::chrono::seconds(waitDuration));
+            controller.gameModController->ResetGameSpeed();
+        }
 
         controller.luaController->LoadLevel("CandleSpace");
 

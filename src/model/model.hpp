@@ -23,5 +23,6 @@ struct RHModel
     std::string convertingMessage;
 
     void Init();
+    void InitLate();
     std::vector<Candle> GetCandlesInMap(Map map);
 };

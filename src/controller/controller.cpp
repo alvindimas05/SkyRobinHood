@@ -11,6 +11,7 @@
 #include "lua_controller/lua_controller.hpp"
 #include "candle_run_controller/candle_run_controller.hpp"
 #include "d4c_controller/d4c_controller.hpp"
+#include "game_mod_controller/game_mod_controller.hpp"
 #include "utils/log/log.hpp"
 
 RHController::RHController(RHModel &m)
@@ -19,6 +20,7 @@ RHController::RHController(RHModel &m)
     luaController = new LuaController(*this);
     candleRunController = new CandleRunController(*this);
     d4cController = new D4CController(*this);
+    gameModController = new GameModController(*this);
 }
 
 bool RHController::CheckForTSM()

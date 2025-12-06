@@ -17,3 +17,31 @@ void Game::Init()
 {
     baseAddr = Cipher::get_libBase();
 }
+
+void Game::InitLate()
+{
+    gameSpeedAddr = GetGameSpeedAddress();
+
+    if (!gameSpeedAddr)
+    {
+        Log::warn("Failed to get Game Speed address");
+    }
+    else
+    {
+        Log::info("Game Speed address initialized at: 0x%lx", gameSpeedAddr - baseAddr);
+    }
+}
+
+uintptr_t Game::GetGameSpeedAddress()
+{
+    uintptr_t ptr1 = *(uintptr_t *)(baseAddr + 0x2895CF8);
+    if (!ptr1)
+        return 0;
+
+    uintptr_t ptr2 = *(uintptr_t *)(ptr1 + 48);
+    if (!ptr2)
+        return 0;
+
+    uintptr_t result = ptr2 + 40;
+    return result;
+}

@@ -89,14 +89,18 @@ add_compile_options(
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/../Shared/src)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
-add_library(${CUR_NAME} SHARED main.cpp ${SOURCES})
+file(GLOB_RECURSE SHARED_SOURCES "${CMAKE_SOURCE_DIR}/../Shared/src/*.cpp")
+
+add_library(${CUR_NAME} SHARED main.cpp ${SOURCES} ${SHARED_SOURCES})
 
 target_include_directories(${CUR_NAME} PRIVATE
 	${CMAKE_SOURCE_DIR}/include
 	${CMAKE_SOURCE_DIR}/src
+	${CMAKE_SOURCE_DIR}/../Shared/src
 )
 
 target_link_libraries(

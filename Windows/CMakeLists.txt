@@ -123,10 +123,16 @@ set(PROJECT_HEADERS
     src/console/console.hpp
 )
 
+# Shared sources from Shared directory
+file(GLOB_RECURSE SHARED_SOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Shared/src/*.cpp"
+)
+
 # Create the DLL
 add_library(${PROJECT_NAME} SHARED
     ${PROJECT_SOURCES}
     ${PROJECT_HEADERS}
+    ${SHARED_SOURCES}
     ${IMGUI_SOURCES}
     ${IMGUI_HEADERS}
     ${MINHOOK_SOURCES}
@@ -156,6 +162,7 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/dependencies
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Shared/src
     ${IMGUI_DIR}
     ${MINHOOK_DIR}
     ${Vulkan_INCLUDE_DIRS}

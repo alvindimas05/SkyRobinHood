@@ -1,12 +1,13 @@
 #include "main.h"
 #include "Cipher/Cipher.h"
 #include "imgui/imgui.h"
-#include "utils/log/log.hpp"
 
-#include "utils/pattern_scanner/pattern_scanner.hpp"
-#include "model/model.hpp"
-#include "view/view.hpp"
-#include "controller/controller.hpp"
+// Use shared code instead of local
+#include "../Shared/src/utils/log/log.hpp"
+#include "../Shared/src/utils/pattern_scanner/pattern_scanner.hpp"
+#include "../Shared/src/model/model.hpp"
+#include "../Shared/src/view/view.hpp"
+#include "../Shared/src/controller/controller.hpp"
 
 RHModel model;
 RHController controller(model);

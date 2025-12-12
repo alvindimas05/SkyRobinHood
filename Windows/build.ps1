@@ -10,7 +10,6 @@ if (-not $env:VULKAN_SDK) {
     Write-Host "ERROR: VULKAN_SDK environment variable not found!" -ForegroundColor Red
     Write-Host "Please install Vulkan SDK and set the VULKAN_SDK environment variable." -ForegroundColor Yellow
     Write-Host "Download from: https://vulkan.lunarg.com/" -ForegroundColor Yellow
-    Read-Host "Press Enter to exit"
     exit 1
 }
 
@@ -35,7 +34,6 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "ERROR: CMake configuration failed!" -ForegroundColor Red
     Set-Location ..
-    Read-Host "Press Enter to exit"
     exit 1
 }
 
@@ -46,7 +44,6 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "ERROR: Build failed!" -ForegroundColor Red
     Set-Location ..
-    Read-Host "Press Enter to exit"
     exit 1
 }
 

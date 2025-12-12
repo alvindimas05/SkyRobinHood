@@ -1,0 +1,63 @@
+#include "game.hpp"
+#include "utils/log/log.hpp"
+
+// TODO: Platform-specific includes
+#ifdef __ANDROID__
+#include "Cipher/Cipher.h"
+#endif
+
+const uint8_t Game::updateBytes[44] = {
+    0xFD, 0x7B, 0xBD, 0xA9, 0xFC, 0x57, 0x01, 0xA9,
+    0xF4, 0x4F, 0x02, 0xA9, 0xFD, 0x03, 0x00, 0x91,
+    0xE9, 0xC3, 0x03, 0xD1, 0x3F, 0xE9, 0x7B, 0x92,
+    0x7F, 0x7C, 0x00, 0x71, 0x09, 0x05, 0x00, 0x54,
+    0x35, 0x10, 0x40, 0xF9, 0xE0, 0x03, 0x00, 0x91,
+    0xF4, 0x03, 0x03, 0x2A};
+
+const uint8_t Game::luaDebugDoStringBytes[40] = {
+    0xFD, 0x7B, 0xBD, 0xA9, 0xFC, 0x0B, 0x00, 0xF9,
+    0xF4, 0x4F, 0x02, 0xA9, 0xFD, 0x03, 0x00, 0x91,
+    0xFF, 0x43, 0x24, 0xD1, 0xF3, 0x03, 0x01, 0xAA,
+    0xF4, 0x03, 0x00, 0xAA, 0x13, 0xC5, 0xA5, 0x97,
+    0xC0, 0x00, 0x00, 0x35, 0xE0, 0x03, 0x14, 0xAA};
+
+void Game::Init()
+{
+    // TODO: Platform-specific implementation
+#ifdef __ANDROID__
+    baseAddr = Cipher::get_libBase();
+#else
+    // TODO: Windows implementation - find game module base
+    baseAddr = 0;
+#endif
+}
+
+void Game::InitLate()
+{
+    gameSpeedAddr = GetGameSpeedAddress();
+
+    if (!gameSpeedAddr)
+    {
+        Log::warn("Failed to get Game Speed address");
+    }
+    else
+    {
+        Log::info("Game Speed address initialized at: 0x%lx", gameSpeedAddr - baseAddr);
+    }
+}
+
+uintptr_t Game::GetGameSpeedAddress()
+{
+    // TODO: Platform-specific - these offsets are for Android ARM64
+    // Windows will need different offsets for x64
+    uintptr_t ptr1 = *(uintptr_t *)(baseAddr + 0x2895CF8);
+    if (!ptr1)
+        return 0;
+
+    uintptr_t ptr2 = *(uintptr_t *)(ptr1 + 48);
+    if (!ptr2)
+        return 0;
+
+    uintptr_t result = ptr2 + 40;
+    return result;
+}

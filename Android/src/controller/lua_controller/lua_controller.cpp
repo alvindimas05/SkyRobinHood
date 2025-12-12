@@ -1,0 +1,157 @@
+#include <queue>
+#include <mutex>
+#include "lua_controller.hpp"
+#include "controller/controller.hpp"
+#include "model/model.hpp"
+#include "utils/pattern_scanner/pattern_scanner.hpp"
+#include "dobby/dobby.h"
+#include "utils/log/log.hpp"
+
+static uint64_t luaState = 0;
+static Game::LuaDebugDoString originalLuaDebugDoString = nullptr;
+static Game::Update originalGameUpdate = nullptr;
+static std::queue<std::string> scriptQueue;
+static std::mutex queueMutex;
+
+static uint64_t hookedUpdate(uint64_t a1, uint64_t a2, uint64_t a3, unsigned int a4)
+{
+    if (!luaState)
+    {
+        Log::info("Storing Lua state from Game Update");
+        luaState = *(uint64_t *)(a2 + 32);
+    }
+
+    std::lock_guard<std::mutex> lock(queueMutex);
+    while (!scriptQueue.empty() && luaState)
+    {
+        std::string script = scriptQueue.front();
+        scriptQueue.pop();
+        originalLuaDebugDoString(luaState, const_cast<char *>(script.c_str()));
+    }
+
+    return originalGameUpdate(a1, a2, a3, a4);
+}
+
+void LuaController::Init()
+{
+    auto &game = controller.model.game;
+    try
+    {
+        uintptr_t updateAddr = PatternScanner::Find(game.updateBytes, game.updateMask);
+        if (updateAddr)
+        {
+            originalGameUpdate = (Game::Update)updateAddr;
+            DobbyHook((void *)updateAddr, (void *)hookedUpdate, (void **)&originalGameUpdate);
+            Log::info("Hooked Game Update function at address: 0x%lx", updateAddr - game.baseAddr);
+        }
+        else
+        {
+            controller.model.errorMessage = "Failed to find Game Update function";
+            Log::error("Failed to find Game Update function pattern.");
+        }
+    }
+    catch (...)
+    {
+        Log::error("Exception when trying to find Game Update function pattern.");
+    }
+
+    try
+    {
+        uintptr_t luaDebugDoStringAddr = PatternScanner::Find(game.luaDebugDoStringBytes, game.luaDebugDoStringMask);
+        if (luaDebugDoStringAddr)
+        {
+            originalLuaDebugDoString = (Game::LuaDebugDoString)luaDebugDoStringAddr;
+            Log::info("Found LuaDebugDoString function at address: 0x%lx", luaDebugDoStringAddr - game.baseAddr);
+        }
+        else
+        {
+            controller.model.errorMessage = "Failed to find LuaDebugDoString function";
+            Log::error("Failed to find LuaDebugDoString function pattern.");
+        }
+    }
+    catch (...)
+    {
+        Log::error("Exception when trying to find LuaDebugDoString function pattern.");
+    }
+
+    if (originalGameUpdate == nullptr)
+    {
+        controller.model.errorMessage = "Failed to find Game Update function";
+        return;
+    }
+    if (originalLuaDebugDoString == nullptr)
+    {
+        controller.model.errorMessage = "Failed to find LuaDebugDoString";
+        return;
+    }
+}
+
+void LuaController::ExecuteString(const char *luaCode)
+{
+    if (originalGameUpdate == nullptr)
+    {
+        Log::error("Failed to Lua ExecuteString because Game Update is not hooked");
+        return;
+    }
+
+    if (originalLuaDebugDoString == nullptr)
+    {
+        Log::error("Failed to Lua ExecuteString because LuaDebugDoString is not found");
+        return;
+    }
+    
+    std::lock_guard<std::mutex> lock(queueMutex);
+    scriptQueue.push(std::string(luaCode));
+}
+
+void LuaController::LoadLevel(const char *levelName)
+{
+    char buffer[512];
+
+    std::snprintf(buffer, sizeof(buffer), R"(
+        local e = game:eventBarn():AddEventByMetaName("ChangeLevelWithFade")
+        e:levelName("%s")
+
+        e:fadeOutDuration(0)
+        e:fadeInDuration(0)
+        e:fadeHoldDuration(0)
+
+        e:isLevelComplete(false)
+        e:Start()
+    )",
+                  levelName);
+
+    ExecuteString(buffer);
+}
+
+void LuaController::TeleportToCoords(float x, float y, float z)
+{
+    char buffer[512];
+
+    std::snprintf(buffer, sizeof(buffer), R"(
+        local e = game:eventBarn():AddEventByMetaName("AvatarSetPos")
+        local m = game:markerBarn():CreateMarker(0)
+        m:pos({%f, %f, %f})
+
+        e:marker(m)
+        e:onGround(false)
+        e:breakHandHold(false)
+        e:killMomentum(false)
+        e:setLevelStartPosition(false)
+        e:Start()
+
+        game:markerBarn():ReleaseMarker(m)
+    )",
+                  x, y, z);
+
+    ExecuteString(buffer);
+}
+
+void LuaController::PlayTimeline(const char *timelineName)
+{
+    char buffer[64];
+
+    std::snprintf(buffer, sizeof(buffer), "PlayTimeline(game, '%s')", timelineName);
+
+    ExecuteString(buffer);
+}

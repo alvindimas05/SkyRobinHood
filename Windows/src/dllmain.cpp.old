@@ -1,0 +1,198 @@
+#include <Windows.h>
+#include <cstdio>
+#include <fstream>
+#include <string>
+#include <thread>
+
+#include "console/console.hpp"
+#include "dependencies/minhook/MinHook.h"
+#include "hooks/hooks.hpp"
+
+// Forward declare power management types to avoid including powrprof.h
+// which conflicts with our proxy exports
+typedef enum _POWER_INFORMATION_LEVEL {
+    SystemPowerPolicyAc = 0,
+    // ... other values not needed for proxy
+} POWER_INFORMATION_LEVEL,
+    *PPOWER_INFORMATION_LEVEL;
+
+typedef enum _POWER_PLATFORM_ROLE {
+    PlatformRoleUnspecified = 0,
+    // ... other values not needed for proxy
+} POWER_PLATFORM_ROLE,
+    *PPOWER_PLATFORM_ROLE;
+
+typedef struct _SYSTEM_POWER_CAPABILITIES {
+    BOOLEAN PowerButtonPresent;
+    BOOLEAN SleepButtonPresent;
+    BOOLEAN LidPresent;
+    BOOLEAN SystemS1;
+    BOOLEAN SystemS2;
+    BOOLEAN SystemS3;
+    BOOLEAN SystemS4;
+    BOOLEAN SystemS5;
+    BOOLEAN HiberFilePresent;
+    BOOLEAN FullWake;
+    BOOLEAN VideoDimPresent;
+    BOOLEAN ApmPresent;
+    BOOLEAN UpsPresent;
+    BOOLEAN ThermalControl;
+    BOOLEAN ProcessorThrottle;
+    BYTE ProcessorMinThrottle;
+    BYTE ProcessorMaxThrottle;
+    BOOLEAN FastSystemS4;
+    BOOLEAN Hiberboot;
+    BOOLEAN WakeAlarmPresent;
+    BOOLEAN AoAc;
+    BOOLEAN DiskSpinDown;
+    BYTE HiberFileType;
+    BOOLEAN AoAcConnectivitySupported;
+    BYTE spare3[6];
+    BOOLEAN SystemBatteriesPresent;
+    BOOLEAN BatteriesAreShortTerm;
+    BYTE BatteryScale[3];
+    SYSTEM_POWER_STATE AcOnLineWake;
+    SYSTEM_POWER_STATE SoftLidWake;
+    SYSTEM_POWER_STATE RtcWake;
+    SYSTEM_POWER_STATE MinDeviceWakeState;
+    SYSTEM_POWER_STATE DefaultLowLatencyWake;
+} SYSTEM_POWER_CAPABILITIES, *PSYSTEM_POWER_CAPABILITIES;
+
+// powrprof.dll proxy variables
+HMODULE dllHandle = nullptr;
+BOOLEAN(WINAPI* o_GetPwrCapabilities)(PSYSTEM_POWER_CAPABILITIES);
+LONG(WINAPI* o_CallNtPowerInformation)(POWER_INFORMATION_LEVEL, PVOID, ULONG, PVOID, ULONG);
+POWER_PLATFORM_ROLE(WINAPI* o_PowerDeterminePlatformRole)( );
+
+// Global path for config
+std::string g_ModPath;
+
+// Export powrprof.dll functions
+extern "C" __declspec(dllexport) BOOLEAN WINAPI GetPwrCapabilities(PSYSTEM_POWER_CAPABILITIES lpspc) {
+    return o_GetPwrCapabilities(lpspc);
+}
+
+extern "C" __declspec(dllexport) LONG WINAPI CallNtPowerInformation(
+    POWER_INFORMATION_LEVEL InformationLevel,
+    PVOID InputBuffer,
+    ULONG InputBufferLength,
+    PVOID OutputBuffer,
+    ULONG OutputBufferLength) {
+    return o_CallNtPowerInformation(InformationLevel, InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength);
+}
+
+extern "C" __declspec(dllexport) POWER_PLATFORM_ROLE WINAPI PowerDeterminePlatformRole( ) {
+    return o_PowerDeterminePlatformRole( );
+}
+
+// Helper function for Vulkan layer config
+void CreateVulkanLayerConfig( ) {
+    // Create config file path
+    std::string configPath = g_ModPath + "\\mod_config.json";
+
+    // Ensure config file exists
+    std::ifstream checkFile(configPath);
+    if (!checkFile.is_open( )) {
+        std::ofstream createFile(configPath);
+        if (createFile.is_open( )) {
+            createFile << "{\n"
+                       << "  \"file_format_version\": \"1.0.0\",\n"
+                       << "  \"layer\": {\n"
+                       << "    \"name\": \"ImGuiDemoLayer\",\n"
+                       << "    \"type\": \"GLOBAL\",\n"
+                       << "    \"library_path\": \"" << g_ModPath << "\\\\powrprof.dll\",\n"
+                       << "    \"api_version\": \"1.1.0\",\n"
+                       << "    \"implementation_version\": \"1\",\n"
+                       << "    \"description\": \"ImGui Demo Layer\"\n"
+                       << "  }\n"
+                       << "}\n";
+            createFile.close( );
+            LOG("[+] Created Vulkan layer config at: %s\n", configPath.c_str( ));
+        }
+    } else {
+        checkFile.close( );
+    }
+}
+
+// Load the real powrprof.dll
+void LoadPowrProfWrapper( ) {
+    dllHandle = LoadLibrary("C:\\Windows\\System32\\powrprof.dll");
+    if (dllHandle == NULL) {
+        dllHandle = LoadLibrary("C:\\Windows\\System32\\POWRPROF.dll");
+    }
+
+    LOG("[+] Loading powrprof.dll symbols...\n");
+
+    if (dllHandle != NULL) {
+        o_GetPwrCapabilities = (BOOLEAN(WINAPI*)(PSYSTEM_POWER_CAPABILITIES))GetProcAddress(dllHandle, "GetPwrCapabilities");
+        o_CallNtPowerInformation = (LONG(WINAPI*)(POWER_INFORMATION_LEVEL, PVOID, ULONG, PVOID, ULONG))GetProcAddress(dllHandle, "CallNtPowerInformation");
+        o_PowerDeterminePlatformRole = (POWER_PLATFORM_ROLE(WINAPI*)( ))GetProcAddress(dllHandle, "PowerDeterminePlatformRole");
+
+        if (o_GetPwrCapabilities == nullptr || o_CallNtPowerInformation == nullptr || o_PowerDeterminePlatformRole == nullptr) {
+            LOG("[!] Could not locate symbols in powrprof.dll\n");
+        } else {
+            LOG("[+] powrprof.dll loaded successfully\n");
+        }
+    } else {
+        LOG("[!] Failed to load powrprof.dll\n");
+    }
+}
+
+DWORD WINAPI OnProcessAttach(LPVOID lpParam);
+DWORD WINAPI OnProcessDetach(LPVOID lpParam);
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
+    if (fdwReason == DLL_PROCESS_ATTACH) {
+        DisableThreadLibraryCalls(hinstDLL);
+
+        // Load the real powrprof.dll first
+        LoadPowrProfWrapper( );
+
+        // Get mod directory path
+        WCHAR path[MAX_PATH];
+        GetModuleFileNameW(NULL, path, MAX_PATH);
+        std::wstring ws(path);
+        std::string _path(ws.begin( ), ws.end( ));
+        g_ModPath = _path.substr(0, _path.find_last_of("\\/"));
+
+        HANDLE hHandle = CreateThread(NULL, 0, OnProcessAttach, hinstDLL, 0, NULL);
+        if (hHandle != NULL) {
+            CloseHandle(hHandle);
+        }
+    } else if (fdwReason == DLL_PROCESS_DETACH && !lpReserved) {
+        OnProcessDetach(NULL);
+
+        // Cleanup
+        if (dllHandle != NULL) {
+            FreeLibrary(dllHandle);
+        }
+    }
+
+    return TRUE;
+}
+
+DWORD WINAPI OnProcessAttach(LPVOID lpParam) {
+    Console::Alloc( );
+    LOG("[+] ImGui Demo Hook initialized\n");
+    LOG("[+] Rendering backend: Vulkan\n");
+    LOG("[+] Mod path: %s\n", g_ModPath.c_str( ));
+
+    // Create Vulkan layer config
+    CreateVulkanLayerConfig( );
+
+    // Initialize MinHook
+    MH_Initialize( );
+
+    // Initialize hooks
+    H::Init( );
+
+    return 0;
+}
+
+DWORD WINAPI OnProcessDetach(LPVOID lpParam) {
+    H::Free( );
+    MH_Uninitialize( );
+    Console::Free( );
+
+    return 0;
+}

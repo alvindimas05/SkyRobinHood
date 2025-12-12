@@ -1,0 +1,13 @@
+{
+  "name": "libRobinHood.so",
+  "author": "Flurie",
+  "displayName": "Robin Hood",
+  "description": "A mod to maximize your candle run",
+  "majorVersion": 1,
+  "minorVersion": 1,
+  "patchVersion": 0,
+  "displaysUI": true,
+  "selfManagedUI": true,
+  "githubReleasesUrl": "",
+  "dependencies": []
+}

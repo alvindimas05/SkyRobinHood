@@ -1,6 +1,5 @@
 #include "candle_run_view.hpp"
 
-// TODO: Platform-specific ImGui includes
 #ifdef __ANDROID__
 #include "imgui/imgui.h"
 #elif _WIN32

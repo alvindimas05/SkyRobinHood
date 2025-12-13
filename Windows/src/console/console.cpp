@@ -10,8 +10,6 @@ void Console::Alloc( ) {
 #ifndef DISABLE_LOGGING_CONSOLE
     AllocConsole( );
 
-    SetConsoleTitleA("RobinHood - Debug Console");
-
     freopen_s(reinterpret_cast<FILE**>(stdin), "conin$", "r", stdin);
     freopen_s(reinterpret_cast<FILE**>(stdout), "conout$", "w", stdout);
 

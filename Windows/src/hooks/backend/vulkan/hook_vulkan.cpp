@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 // https://vulkan.lunarg.com/
 #include <vulkan/vulkan.h>
@@ -338,15 +339,15 @@ namespace VK {
             LOG("[+] Vulkan: fnQueuePresentKHR: 0x%p\n", fnQueuePresentKHR);
             LOG("[+] Vulkan: fnCreateSwapchainKHR: 0x%p\n", fnCreateSwapchainKHR);
 
-            static MH_STATUS aniStatus = MH_CreateHook(reinterpret_cast<void**>(fnAcquireNextImageKHR), &hkAcquireNextImageKHR, reinterpret_cast<void**>(&oAcquireNextImageKHR));
-            static MH_STATUS ani2Status = MH_CreateHook(reinterpret_cast<void**>(fnAcquireNextImage2KHR), &hkAcquireNextImage2KHR, reinterpret_cast<void**>(&oAcquireNextImage2KHR));
-            static MH_STATUS qpStatus = MH_CreateHook(reinterpret_cast<void**>(fnQueuePresentKHR), &hkQueuePresentKHR, reinterpret_cast<void**>(&oQueuePresentKHR));
-            static MH_STATUS csStatus = MH_CreateHook(reinterpret_cast<void**>(fnCreateSwapchainKHR), &hkCreateSwapchainKHR, reinterpret_cast<void**>(&oCreateSwapchainKHR));
+            static MH_STATUS aniStatus = MH_CreateHook(reinterpret_cast<LPVOID>(fnAcquireNextImageKHR), reinterpret_cast<LPVOID>(&hkAcquireNextImageKHR), reinterpret_cast<void**>(&oAcquireNextImageKHR));
+            static MH_STATUS ani2Status = MH_CreateHook(reinterpret_cast<LPVOID>(fnAcquireNextImage2KHR), reinterpret_cast<LPVOID>(&hkAcquireNextImage2KHR), reinterpret_cast<void**>(&oAcquireNextImage2KHR));
+            static MH_STATUS qpStatus = MH_CreateHook(reinterpret_cast<LPVOID>(fnQueuePresentKHR), reinterpret_cast<LPVOID>(&hkQueuePresentKHR), reinterpret_cast<void**>(&oQueuePresentKHR));
+            static MH_STATUS csStatus = MH_CreateHook(reinterpret_cast<LPVOID>(fnCreateSwapchainKHR), reinterpret_cast<LPVOID>(&hkCreateSwapchainKHR), reinterpret_cast<void**>(&oCreateSwapchainKHR));
 
-            MH_EnableHook(fnAcquireNextImageKHR);
-            MH_EnableHook(fnAcquireNextImage2KHR);
-            MH_EnableHook(fnQueuePresentKHR);
-            MH_EnableHook(fnCreateSwapchainKHR);
+            MH_EnableHook(reinterpret_cast<LPVOID>(fnAcquireNextImageKHR));
+            MH_EnableHook(reinterpret_cast<LPVOID>(fnAcquireNextImage2KHR));
+            MH_EnableHook(reinterpret_cast<LPVOID>(fnQueuePresentKHR));
+            MH_EnableHook(reinterpret_cast<LPVOID>(fnCreateSwapchainKHR));
         }
     }
 

@@ -15,6 +15,7 @@ struct RHView
     RHController &controller;
     CandleRunView *candleRunView;
     D4CView *d4cView;
+    // int activeTab = 0;
 
     RHView(RHModel &m, RHController &c) : model(m), controller(c) {}
 

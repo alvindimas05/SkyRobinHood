@@ -10,6 +10,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+# For multi-config generators (VS), also set per-config directories
+foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER ${CONFIG} CONFIG_UPPER)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_UPPER} ${CMAKE_BINARY_DIR}/lib)
+endforeach()
+
 # Find Vulkan SDK
 # First try to use VULKAN_SDK environment variable
 if(DEFINED ENV{VULKAN_SDK})
@@ -143,18 +151,14 @@ add_library(${PROJECT_NAME} SHARED
 set_target_properties(${PROJECT_NAME} PROPERTIES
     OUTPUT_NAME "powrprof"
     SUFFIX ".dll"
-)
-
-# Set target properties for different configurations
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin
+    PREFIX ""
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
 # For Debug configuration, keep the original name with configuration
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        OUTPUT_NAME "RobinHood Debug"
+        OUTPUT_NAME "RobinHood_Debug"
     )
 endif()
 
@@ -225,6 +229,7 @@ endif()
 # Link libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
     ${Vulkan_LIBRARIES}
+    dwmapi
 )
 
 # Windows-specific settings

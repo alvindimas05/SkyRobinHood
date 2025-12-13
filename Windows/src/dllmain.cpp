@@ -1,5 +1,6 @@
-// #include <TlHelp32.h>  // Not needed for basic demo
 #include <Windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#include <TlHelp32.h>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -143,16 +144,13 @@ LSTATUS hkRegEnumValueA(
     return result;
 }
 
-// Terminate crash reporter to avoid detection
-// Not needed for basic demo - requires TlHelp32.h
-/*
-void TerminateCrashHandler() {
-    PROCESSENTRY32 entry;
-    entry.dwSize = sizeof(PROCESSENTRY32);
+void TerminateCrashHandler( ) {
+    PROCESSENTRY32W entry;
+    entry.dwSize = sizeof(PROCESSENTRY32W);
 
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
-    if (Process32First(snapshot, &entry) == TRUE) {
-        while (Process32Next(snapshot, &entry) == TRUE) {
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (Process32FirstW(snapshot, &entry) == TRUE) {
+        while (Process32NextW(snapshot, &entry) == TRUE) {
             if (lstrcmpW(entry.szExeFile, L"crashpad_handler.exe") == 0 ||
                 lstrcmpW(entry.szExeFile, L"crash_reporter.exe") == 0) {
                 HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, entry.th32ProcessID);
@@ -166,7 +164,6 @@ void TerminateCrashHandler() {
     }
     CloseHandle(snapshot);
 }
-*/
 
 // Load the real powrprof.dll
 void LoadPowrProfWrapper( ) {
@@ -227,9 +224,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 
 DWORD WINAPI OnProcessAttach(LPVOID lpParam) {
     Console::Alloc( );
-    LOG("[+] Injection-free loader initialized\n");
-    LOG("[+] Rendering backend: Vulkan\n");
-    LOG("[+] Mod path: %s\n", g_ModPath.c_str( ));
 
     // Hook RegEnumValueA for Vulkan layer injection
     HMODULE advapi32 = LoadLibraryW(L"advapi32.dll");
@@ -238,12 +232,12 @@ DWORD WINAPI OnProcessAttach(LPVOID lpParam) {
         if (fnRegEnumValue != NULL) {
             MH_Initialize( );
 
-            if (MH_CreateHook(fnRegEnumValue, &hkRegEnumValueA, reinterpret_cast<LPVOID*>(&oRegEnumValueA)) == MH_OK) {
-                if (MH_EnableHook(fnRegEnumValue) == MH_OK) {
+            if (MH_CreateHook(reinterpret_cast<LPVOID>(fnRegEnumValue), reinterpret_cast<LPVOID>(&hkRegEnumValueA), reinterpret_cast<LPVOID*>(&oRegEnumValueA)) == MH_OK) {
+                if (MH_EnableHook(reinterpret_cast<LPVOID>(fnRegEnumValue)) == MH_OK) {
                     LOG("[+] Successfully hooked RegEnumValueA for Vulkan layer injection\n");
 
                     // Terminate crash handlers - Disabled for basic demo
-                    // TerminateCrashHandler();
+                    TerminateCrashHandler( );
                 } else {
                     LOG("[!] Failed to enable RegEnumValueA hook\n");
                 }

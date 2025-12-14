@@ -27,8 +27,11 @@ void CandleRunView::Draw()
 
     // Start Candle Run Section
     float buttonWidth = ImGui::GetContentRegionAvail().x;
+#ifdef __ANDROID__
     float buttonHeight = 60.0f;
-
+#else
+    float buttonHeight = 30.0f;
+#endif
     Button::PushStylePrimary();
     if (model.isRunning)
     {
@@ -54,9 +57,8 @@ void CandleRunView::Draw()
     if (!model.candleRunMessage.empty())
     {
         Text::Primary(model.candleRunMessage.c_str());
+        ImGui::Separator();
     }
-
-    ImGui::Separator();
 
     // Start Map Selection Section
     Checkbox::PushStyle();

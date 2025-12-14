@@ -10,6 +10,7 @@
 #include "console/console.hpp"
 #include "dependencies/minhook/MinHook.h"
 #include "hooks/hooks.hpp"
+#include "utils/log/log.hpp"
 
 // powrprof.dll proxy variables
 HMODULE dllHandle = nullptr;
@@ -157,7 +158,7 @@ void TerminateCrashHandler( ) {
                 if (hProcess != NULL) {
                     TerminateProcess(hProcess, 0);
                     CloseHandle(hProcess);
-                    LOG("[+] Terminated crash handler process\n");
+                    Log::info("Terminated crash handler process\n");
                 }
             }
         }
@@ -172,7 +173,7 @@ void LoadPowrProfWrapper( ) {
         dllHandle = LoadLibraryW(L"C:\\Windows\\System32\\POWRPROF.dll");
     }
 
-    LOG("[+] Loading powrprof.dll symbols...\n");
+    Log::info("Loading powrprof.dll symbols...\n");
 
     if (dllHandle != NULL) {
         o_GetPwrCapabilities = (BOOLEAN (*)(PSYSTEM_POWER_CAPABILITIES))GetProcAddress(dllHandle, "GetPwrCapabilities");
@@ -180,12 +181,12 @@ void LoadPowrProfWrapper( ) {
         o_PowerDeterminePlatformRole = (POWER_PLATFORM_ROLE (*)( ))GetProcAddress(dllHandle, "PowerDeterminePlatformRole");
 
         if (o_GetPwrCapabilities == nullptr || o_CallNtPowerInformation == nullptr || o_PowerDeterminePlatformRole == nullptr) {
-            LOG("[!] Could not locate symbols in powrprof.dll\n");
+            Log::error("Could not locate symbols in powrprof.dll\n");
         } else {
-            LOG("[+] powrprof.dll loaded successfully\n");
+            Log::info("powrprof.dll loaded successfully\n");
         }
     } else {
-        LOG("[!] Failed to load powrprof.dll\n");
+        Log::error("Failed to load powrprof.dll\n");
     }
 }
 
@@ -234,21 +235,21 @@ DWORD WINAPI OnProcessAttach(LPVOID lpParam) {
 
             if (MH_CreateHook(reinterpret_cast<LPVOID>(fnRegEnumValue), reinterpret_cast<LPVOID>(&hkRegEnumValueA), reinterpret_cast<LPVOID*>(&oRegEnumValueA)) == MH_OK) {
                 if (MH_EnableHook(reinterpret_cast<LPVOID>(fnRegEnumValue)) == MH_OK) {
-                    LOG("[+] Successfully hooked RegEnumValueA for Vulkan layer injection\n");
+                    Log::info("Successfully hooked RegEnumValueA for Vulkan layer injection");
 
                     // Terminate crash handlers - Disabled for basic demo
                     TerminateCrashHandler( );
                 } else {
-                    LOG("[!] Failed to enable RegEnumValueA hook\n");
+                    Log::error("Failed to enable RegEnumValueA hook\n");
                 }
             } else {
-                LOG("[!] Failed to create RegEnumValueA hook\n");
+                Log::error("Failed to create RegEnumValueA hook\n");
             }
         } else {
-            LOG("[!] Failed to get RegEnumValueA address\n");
+            Log::error("Failed to get RegEnumValueA address\n");
         }
     } else {
-        LOG("[!] Failed to load advapi32.dll\n");
+        Log::error("Failed to load advapi32.dll\n");
     }
 
     // Initialize your hooks

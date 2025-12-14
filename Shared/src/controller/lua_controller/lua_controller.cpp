@@ -6,9 +6,10 @@
 #include "utils/pattern_scanner/pattern_scanner.hpp"
 #include "utils/log/log.hpp"
 
-// TODO: Platform-specific hooking
 #ifdef __ANDROID__
 #include "dobby/dobby.h"
+#else
+#include "dependencies/minhook/MinHook.h"
 #endif
 
 static uint64_t luaState = 0;
@@ -40,15 +41,18 @@ void LuaController::Init()
 {
     auto &game = controller.model.game;
 
-    // TODO: Platform-specific hooking implementation
-#ifdef __ANDROID__
     try
     {
         uintptr_t updateAddr = PatternScanner::Find(game.updateBytes, game.updateMask);
         if (updateAddr)
         {
             originalGameUpdate = (Game::Update)updateAddr;
+#ifdef __ANDROID__
             DobbyHook((void *)updateAddr, (void *)hookedUpdate, (void **)&originalGameUpdate);
+#else
+            MH_CreateHook((void *)updateAddr, (void *)hookedUpdate, (void **)&originalGameUpdate);
+            MH_EnableHook((void *)updateAddr);
+#endif
             Log::info("Hooked Game Update function at address: 0x%lx", updateAddr - game.baseAddr);
         }
         else
@@ -91,9 +95,6 @@ void LuaController::Init()
         controller.model.errorMessage = "Failed to find LuaDebugDoString";
         return;
     }
-#else
-    // TODO: Windows implementation using MinHook
-#endif
 }
 
 void LuaController::ExecuteString(const char *luaCode)

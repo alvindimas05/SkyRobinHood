@@ -21,6 +21,7 @@
 #include "../../hooks.hpp"
 
 #include "../../../menu/menu.hpp"
+#include "../../../../Shared/src/utils/log/log.hpp"
 
 static VkAllocationCallbacks* g_Allocator = NULL;
 static VkInstance g_Instance = VK_NULL_HANDLE;
@@ -57,7 +58,7 @@ static bool CreateDeviceVK( ) {
 
         // Create Vulkan Instance without any debug feature
         vkCreateInstance(&create_info, g_Allocator, &g_Instance);
-        LOG("[+] Vulkan: g_Instance: 0x%p\n", g_Instance);
+        Log::info("Vulkan: g_Instance: 0x%p", g_Instance);
     }
 
     // Select GPU
@@ -83,7 +84,7 @@ static bool CreateDeviceVK( ) {
         }
 
         g_PhysicalDevice = gpus[use_gpu];
-        LOG("[+] Vulkan: g_PhysicalDevice: 0x%p\n", g_PhysicalDevice);
+        Log::info("Vulkan: g_PhysicalDevice: 0x%p", g_PhysicalDevice);
 
         delete[] gpus;
     }
@@ -102,7 +103,7 @@ static bool CreateDeviceVK( ) {
         }
         IM_ASSERT(g_QueueFamily != (uint32_t)-1);
 
-        LOG("[+] Vulkan: g_QueueFamily: %u\n", g_QueueFamily);
+        Log::info("Vulkan: g_QueueFamily: %u", g_QueueFamily);
     }
 
     // Create Logical Device (with 1 queue)
@@ -125,7 +126,7 @@ static bool CreateDeviceVK( ) {
 
         vkCreateDevice(g_PhysicalDevice, &create_info, g_Allocator, &g_FakeDevice);
 
-        LOG("[+] Vulkan: g_FakeDevice: 0x%p\n", g_FakeDevice);
+        Log::info("Vulkan: g_FakeDevice: 0x%p", g_FakeDevice);
     }
 
     return true;
@@ -316,7 +317,7 @@ static VkResult VKAPI_CALL hkCreateSwapchainKHR(VkDevice device,
 namespace VK {
     void Hook(HWND hwnd) {
         if (!CreateDeviceVK( )) {
-            LOG("[!] CreateDeviceVK() failed.\n");
+            Log::error("CreateDeviceVK() failed");
             return;
         }
 
@@ -334,10 +335,10 @@ namespace VK {
             g_Hwnd = hwnd;
 
             // Hook
-            LOG("[+] Vulkan: fnAcquireNextImageKHR: 0x%p\n", fnAcquireNextImageKHR);
-            LOG("[+] Vulkan: fnAcquireNextImage2KHR: 0x%p\n", fnAcquireNextImage2KHR);
-            LOG("[+] Vulkan: fnQueuePresentKHR: 0x%p\n", fnQueuePresentKHR);
-            LOG("[+] Vulkan: fnCreateSwapchainKHR: 0x%p\n", fnCreateSwapchainKHR);
+            Log::info("Vulkan: fnAcquireNextImageKHR: 0x%p", fnAcquireNextImageKHR);
+            Log::info("Vulkan: fnAcquireNextImage2KHR: 0x%p", fnAcquireNextImage2KHR);
+            Log::info("Vulkan: fnQueuePresentKHR: 0x%p", fnQueuePresentKHR);
+            Log::info("Vulkan: fnCreateSwapchainKHR: 0x%p", fnCreateSwapchainKHR);
 
             static MH_STATUS aniStatus = MH_CreateHook(reinterpret_cast<LPVOID>(fnAcquireNextImageKHR), reinterpret_cast<LPVOID>(&hkAcquireNextImageKHR), reinterpret_cast<void**>(&oAcquireNextImageKHR));
             static MH_STATUS ani2Status = MH_CreateHook(reinterpret_cast<LPVOID>(fnAcquireNextImage2KHR), reinterpret_cast<LPVOID>(&hkAcquireNextImage2KHR), reinterpret_cast<void**>(&oAcquireNextImage2KHR));
@@ -581,7 +582,7 @@ static bool DoesQueueSupportGraphic(VkQueue queue, VkQueue* pGraphicQueue) {
 #else
 #include <Windows.h>
 namespace VK {
-    void Hook(HWND hwnd) { LOG("[!] Vulkan backend is not enabled!\n"); }
+    void Hook(HWND hwnd) { Log::error("Vulkan backend is not enabled!"); }
     void Unhook( ) { }
 } // namespace VK
 #endif

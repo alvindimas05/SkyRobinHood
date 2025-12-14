@@ -36,25 +36,15 @@ void Log::error(const char *fmt, ...)
     va_end(args);
 }
 #else
-// Windows/Other platforms implementation
-static const char *levelToString(const char *level)
-{
-    return level;
-}
-
 static void logMessage(const char *level, const char *fmt, va_list args)
 {
-    // Get timestamp
     time_t now = time(nullptr);
     char timeStr[32];
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", localtime(&now));
 
-    // Print to console
-    printf("[%s] [%s] ", timeStr, level);
+    printf("%s  [RobinHood] [%s] ", timeStr, level);
     vprintf(fmt, args);
     printf("\n");
-
-    // TODO: Also log to file if needed
 }
 
 void Log::debug(const char *fmt, ...)

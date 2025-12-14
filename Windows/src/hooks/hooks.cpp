@@ -8,6 +8,8 @@
 #include "backend/vulkan/hook_vulkan.hpp"
 #include "hooks.hpp"
 
+#include "../../../Shared/src/utils/log/log.hpp"
+
 static HWND g_hWindow = NULL;
 static std::mutex g_mReinitHooksGuard;
 
@@ -33,13 +35,13 @@ static HWND GetProcessWindow( ) {
 
     while (!hwnd) {
         EnumWindows(::EnumWindowsCallback, reinterpret_cast<LPARAM>(&hwnd));
-        LOG("[!] Waiting for window to appear.\n");
+        Log::info("Waiting for window to appear...");
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
     char name[128];
     GetWindowTextA(hwnd, name, RTL_NUMBER_OF(name));
-    LOG("[+] Got window with name: '%s'\n", name);
+    Log::info("Got window with name: '%s'", name);
 
     return hwnd;
 }
@@ -47,7 +49,7 @@ static HWND GetProcessWindow( ) {
 static DWORD WINAPI ReinitializeGraphicalHooks(LPVOID lpParam) {
     std::lock_guard<std::mutex> guard{g_mReinitHooksGuard};
 
-    LOG("[!] Hooks will reinitialize!\n");
+    Log::info("Hooks will reinitialize!");
 
     HWND hNewWindow = GetProcessWindow( );
     while (hNewWindow == reinterpret_cast<HWND>(lpParam)) {
@@ -95,7 +97,7 @@ namespace Hooks {
     void Init( ) {
         g_hWindow = GetProcessWindow( );
 
-        LOG("[+] Initializing Vulkan hooks...\n");
+        Log::info("Initializing Vulkan hooks...");
         VK::Hook(g_hWindow);
 
         oWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(g_hWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WndProc)));
